@@ -1,0 +1,4019 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>TIC TAC TOE — VICE EDITION</title>
+
+  <!-- Google Fonts: Montserrat (GTA-style bold condensed/wide display) & Rajdhani (Futuristic UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,700;0,800;0,900;1,800;1,900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- PeerJS for Real-Time Peer-to-Peer WebRTC Multiplayer across 2 Devices -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. CSS VARIABLES & VICE CITY THEME SYSTEM
+       ========================================================================== */
+    :root {
+      /* Default Theme: Vice Sunset (Pink / Cyan / Sunset Orange) */
+      --bg-sky-top: #090314;
+      --bg-sky-mid: #280a3d;
+      --bg-sky-low: #8f1d68;
+      --bg-horizon: #ff5e3a;
+      --sun-top: #ffdf5d;
+      --sun-mid: #ff5e3a;
+      --sun-bot: #ff007f;
+
+      --primary: #ff2a85;        /* X Symbol & Primary Neon */
+      --primary-glow: rgba(255, 42, 133, 0.65);
+      --secondary: #00f0ff;      /* O Symbol & Secondary Neon */
+      --secondary-glow: rgba(0, 240, 255, 0.65);
+      --accent: #ff9900;         /* Sunset Gold/Orange */
+      --accent-glow: rgba(255, 153, 0, 0.55);
+
+      --glass-bg: rgba(14, 7, 28, 0.58);
+      --glass-bg-strong: rgba(11, 5, 22, 0.78);
+      --glass-border: rgba(255, 255, 255, 0.14);
+      --glass-highlight: rgba(255, 42, 133, 0.25);
+
+      --text-main: #ffffff;
+      --text-muted: rgba(235, 225, 255, 0.72);
+      --font-display: 'Montserrat', sans-serif;
+      --font-ui: 'Rajdhani', sans-serif;
+
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --transition-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Theme 2: Ocean Drive (Electric Orange / Neon Purple) */
+    [data-theme="ocean"] {
+      --bg-sky-top: #070412;
+      --bg-sky-mid: #1d093b;
+      --bg-sky-low: #5c1675;
+      --bg-horizon: #ff7b00;
+      --sun-top: #fff078;
+      --sun-mid: #ff8800;
+      --sun-bot: #b5179e;
+
+      --primary: #ff7b00;
+      --primary-glow: rgba(255, 123, 0, 0.68);
+      --secondary: #b537f2;
+      --secondary-glow: rgba(181, 55, 242, 0.68);
+      --accent: #00f5d4;
+      --accent-glow: rgba(0, 245, 212, 0.55);
+      --glass-highlight: rgba(255, 123, 0, 0.25);
+    }
+
+    /* Theme 3: Midnight Neon (Magenta / Championship Gold) */
+    [data-theme="midnight"] {
+      --bg-sky-top: #05020a;
+      --bg-sky-mid: #170626;
+      --bg-sky-low: #4a0d3a;
+      --bg-horizon: #d90429;
+      --sun-top: #ffe66d;
+      --sun-mid: #ff4d6d;
+      --sun-bot: #7209b7;
+
+      --primary: #ff006e;
+      --primary-glow: rgba(255, 0, 110, 0.7);
+      --secondary: #ffbe0b;
+      --secondary-glow: rgba(255, 190, 11, 0.68);
+      --accent: #3a86ff;
+      --accent-glow: rgba(58, 134, 255, 0.55);
+      --glass-highlight: rgba(255, 190, 11, 0.22);
+    }
+
+    /* ==========================================================================
+       2. RESET & BASE LAYOUT
+       ========================================================================== */
+    /* Subtle Film Grain & Cool Ruteng Mist Overlay */
+    .cinema-grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(165, 243, 252, 0.05) 0%, transparent 48%, rgba(4, 1, 14, 0.72) 100%),
+        linear-gradient(180deg, rgba(125, 211, 252, 0.04) 0%, rgba(186, 230, 253, 0.015) 55%, rgba(14, 24, 48, 0.14) 100%),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.015) 0px,
+          rgba(255, 255, 255, 0.015) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+    }
+
+    .cold-mist-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+      background:
+        radial-gradient(ellipse at 20% 72%, rgba(165, 243, 252, 0.13) 0%, transparent 52%),
+        radial-gradient(ellipse at 82% 66%, rgba(125, 211, 252, 0.12) 0%, transparent 55%),
+        linear-gradient(to top, rgba(186, 230, 253, 0.11) 0%, rgba(125, 211, 252, 0.03) 26%, transparent 48%);
+      animation: coldMistDrift 11s ease-in-out infinite alternate;
+    }
+
+    @keyframes coldMistDrift {
+      0% {
+        transform: translateX(-1.5%) translateY(0%);
+        opacity: 0.72;
+      }
+      50% {
+        transform: translateX(1.2%) translateY(-1.2%);
+        opacity: 0.96;
+      }
+      100% {
+        transform: translateX(2.2%) translateY(0.8%);
+        opacity: 0.8;
+      }
+    }
+
+    /* ==========================================================================
+       3. FULL-SCREEN VICE CITY SUNSET CANVAS (BACKGROUND + CONFETTI)
+       ========================================================================== */
+    #vice-bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;
+      z-index: 1;
+      display: block;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;
+      z-index: 45;
+      pointer-events: none;
+    }
+
+    /* ==========================================================================
+       3B. CINEMATIC OPENING SPLASH (RJRM.GAMES)
+       ========================================================================== */
+    .opening-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at 50% 45%, rgba(28, 8, 52, 0.72) 0%, rgba(5, 2, 14, 0.96) 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      opacity: 1;
+      transition: opacity 0.7s var(--transition-smooth), transform 0.7s var(--transition-smooth), visibility 0.7s;
+    }
+
+    .opening-splash.hide {
+      opacity: 0;
+      transform: scale(1.06);
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .opening-studio-tag {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(0.72rem, 1.8vw, 0.92rem);
+      letter-spacing: 0.42em;
+      text-transform: uppercase;
+      color: var(--secondary);
+      text-shadow: 0 0 16px var(--secondary-glow);
+      margin-bottom: 14px;
+      opacity: 0;
+      transform: translateY(14px);
+      animation: openingFadeUp 0.8s var(--transition-smooth) 0.15s forwards;
+    }
+
+    .opening-brand-title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(2.6rem, 9.5vw, 6.2rem);
+      line-height: 1;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-align: center;
+      background: linear-gradient(
+        180deg,
+        #ffffff 12%,
+        #ffe3f2 45%,
+        var(--primary) 78%,
+        var(--accent) 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 28px var(--primary-glow)) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.85));
+      opacity: 0;
+      transform: scale(0.86) translateY(16px);
+      animation: openingLogoReveal 0.95s var(--transition-smooth) 0.25s forwards;
+    }
+
+    .opening-neon-bar {
+      width: min(280px, 68vw);
+      height: 3px;
+      margin-top: 22px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, var(--primary), var(--secondary), transparent);
+      box-shadow: 0 0 18px var(--primary-glow), 0 0 24px var(--secondary-glow);
+      transform: scaleX(0);
+      animation: openingBarExpand 1.1s var(--transition-smooth) 0.45s forwards;
+    }
+
+    .opening-skip-hint {
+      margin-top: 22px;
+      font-family: var(--font-ui);
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      opacity: 0;
+      animation: openingFadeUp 0.7s ease 0.8s forwards;
+    }
+
+    @keyframes openingFadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes openingLogoReveal {
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes openingBarExpand {
+      to {
+        transform: scaleX(1);
+      }
+    }
+
+    /* ==========================================================================
+       4. APP SHELL & SCREEN TRANSITIONS
+       ========================================================================== */
+    .app-wrapper {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      min-height: 100dvh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding:
+        max(12px, env(safe-area-inset-top))
+        max(12px, env(safe-area-inset-right))
+        max(14px, env(safe-area-inset-bottom))
+        max(12px, env(safe-area-inset-left));
+    }
+
+    body.mobile-fullscreen-mode .app-wrapper {
+      height: 100dvh;
+      min-height: 100dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Top Floating Utility Bar (Theme + Audio Controls) */
+    .top-utility-bar {
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+      left: max(12px, env(safe-area-inset-left));
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .utility-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      background: var(--glass-bg);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--glass-border);
+      padding: 6px 12px;
+      border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .brand-tag {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-style: italic;
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+      animation: pulseDot 2s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.6; }
+    }
+
+    /* Theme Pills */
+    .theme-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .theme-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: transform 0.25s var(--transition-smooth), border-color 0.25s, box-shadow 0.25s;
+      position: relative;
+    }
+
+    .theme-btn[data-set-theme="vice"] {
+      background: linear-gradient(135deg, #ff2a85, #00f0ff);
+    }
+    .theme-btn[data-set-theme="ocean"] {
+      background: linear-gradient(135deg, #ff7b00, #b537f2);
+    }
+    .theme-btn[data-set-theme="midnight"] {
+      background: linear-gradient(135deg, #ff006e, #ffbe0b);
+    }
+
+    .theme-btn:hover {
+      transform: scale(1.15);
+    }
+
+    .theme-btn.active {
+      border-color: #ffffff;
+      transform: scale(1.18);
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+    }
+
+    /* Audio Control */
+    .audio-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      transition: background 0.2s, color 0.2s, transform 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--secondary);
+      transform: scale(1.08);
+    }
+
+    input[type="range"].volume-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 68px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.22);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"].volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--secondary);
+      box-shadow: 0 0 10px var(--secondary);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+
+    input[type="range"].volume-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    /* Screens Container */
+    .screen {
+      width: 100%;
+      max-width: 920px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(24px) scale(0.98);
+      transition: opacity 0.55s var(--transition-smooth), transform 0.55s var(--transition-smooth);
+    }
+
+    .screen.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .screen.entering {
+      animation: screenEntrance 0.75s var(--transition-smooth) forwards;
+    }
+
+    @keyframes screenEntrance {
+      0% {
+        opacity: 0;
+        transform: translateY(32px) scale(0.96);
+        filter: blur(6px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
+    }
+
+    /* ==========================================================================
+       5. LANDING PAGE (GTA VI HERO STYLING)
+       ========================================================================== */
+    .hero-header {
+      text-align: center;
+      margin-bottom: clamp(16px, 3vh, 28px);
+      position: relative;
+      padding-top: 34px;
+    }
+
+    .edition-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(12px);
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.72rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--secondary);
+      text-shadow: 0 0 12px var(--secondary-glow);
+      margin-bottom: 12px;
+      animation: floatSlow 4s ease-in-out infinite;
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    /* GTA VI Inspired Main Title */
+    .hero-title-wrap {
+      position: relative;
+      display: inline-block;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(2.8rem, 8.5vw, 5.8rem);
+      line-height: 0.94;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      background: linear-gradient(
+        180deg,
+        #ffffff 15%,
+        #ffe0f0 48%,
+        var(--primary) 78%,
+        var(--accent) 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 6px 24px rgba(255, 42, 133, 0.45)) drop-shadow(0 2px 0 rgba(0, 0, 0, 0.85));
+      padding: 0 10px;
+    }
+
+    .hero-subtitle {
+      margin-top: 10px;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(0.85rem, 2.2vw, 1.18rem);
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow: 0 0 18px var(--secondary-glow), 0 2px 10px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Glassmorphism Config Card on Landing */
+    .setup-card {
+      width: 100%;
+      max-width: 680px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid rgba(186, 230, 253, 0.36);
+      border-radius: var(--radius-lg);
+      padding: clamp(18px, 3vw, 30px);
+      box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.65),
+        0 0 32px rgba(125, 211, 252, 0.12),
+        inset 0 0 32px rgba(186, 230, 253, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .setup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .control-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-block.full-span {
+      grid-column: 1 / -1;
+    }
+
+    .control-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Segmented Toggle Buttons */
+    .segmented-group {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      background: rgba(5, 2, 14, 0.55);
+      padding: 5px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .segmented-group.three-cols {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .seg-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-ui);
+      font-weight: 700;
+      font-size: 0.92rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 10px 8px;
+      border-radius: 11px;
+      cursor: pointer;
+      transition: all 0.25s var(--transition-smooth);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .seg-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .seg-btn.active {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
+      border-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 0 18px var(--primary-glow), inset 0 0 12px rgba(255, 255, 255, 0.1);
+    }
+
+    .seg-btn.active.cyan-active {
+      border-color: var(--secondary);
+      box-shadow: 0 0 18px var(--secondary-glow), inset 0 0 12px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Difficulty Section Smooth Collapse */
+    #difficulty-container {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    #difficulty-container.disabled {
+      opacity: 0.38;
+      pointer-events: none;
+      filter: grayscale(0.6);
+    }
+
+    /* Player Name Inputs */
+    .name-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .symbol-badge {
+      position: absolute;
+      left: 12px;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-style: italic;
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+
+    .symbol-badge.x-badge {
+      color: var(--primary);
+      text-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .symbol-badge.o-badge {
+      color: var(--secondary);
+      text-shadow: 0 0 10px var(--secondary-glow);
+    }
+
+    .vice-input {
+      width: 100%;
+      background: rgba(6, 3, 16, 0.62);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-md);
+      padding: 11px 14px 11px 36px;
+      color: #ffffff;
+      font-family: var(--font-ui);
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+    }
+
+    .vice-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 16px var(--primary-glow);
+      background: rgba(12, 6, 28, 0.85);
+    }
+
+    .vice-input.o-input:focus {
+      border-color: var(--secondary);
+      box-shadow: 0 0 16px var(--secondary-glow);
+    }
+
+    .vice-input:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    /* Career Lifetime Stats Strip */
+    .career-stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      background: rgba(5, 2, 14, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+    }
+
+    .stat-mini {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .stat-mini-val {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.25rem;
+      color: #ffffff;
+    }
+
+    .stat-mini-val.win-col { color: var(--secondary); text-shadow: 0 0 10px var(--secondary-glow); }
+    .stat-mini-val.loss-col { color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); }
+    .stat-mini-val.draw-col { color: var(--accent); text-shadow: 0 0 10px var(--accent-glow); }
+
+    .stat-mini-lbl {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* Primary CTA Button: PLAY NOW */
+    .btn-play-now {
+      position: relative;
+      width: 100%;
+      padding: 16px 28px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: linear-gradient(110deg, var(--primary) 0%, #ff5e3a 50%, var(--secondary) 100%);
+      background-size: 200% auto;
+      color: #ffffff;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      overflow: hidden;
+      box-shadow:
+        0 10px 32px var(--primary-glow),
+        0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+      transition: transform 0.25s var(--transition-smooth), box-shadow 0.25s, background-position 0.5s ease;
+    }
+
+    .btn-play-now::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+      transform: skewX(-25deg);
+      transition: left 0.65s ease;
+    }
+
+    .btn-play-now:hover {
+      background-position: right center;
+      transform: translateY(-3px) scale(1.015);
+      box-shadow:
+        0 16px 40px var(--primary-glow),
+        0 0 28px var(--secondary-glow),
+        0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+    }
+
+    .btn-play-now:hover::before {
+      left: 150%;
+    }
+
+    .btn-play-now:active {
+      transform: translateY(0) scale(0.985);
+    }
+
+    .reset-stats-link {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-ui);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      align-self: center;
+      opacity: 0.75;
+      transition: opacity 0.2s, color 0.2s;
+    }
+
+    .reset-stats-link:hover {
+      opacity: 1;
+      color: var(--primary);
+    }
+
+    /* ==========================================================================
+       5B. ONLINE MULTIPLAYER LOBBY & CONNECTION BADGES
+       ========================================================================== */
+    .online-lobby-box {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(6, 2, 16, 0.62);
+      border: 1px solid rgba(0, 240, 255, 0.24);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      box-shadow: inset 0 0 24px rgba(0, 240, 255, 0.06);
+    }
+
+    .online-lobby-box.visible {
+      display: flex;
+      animation: screenEntrance 0.35s var(--transition-smooth) forwards;
+    }
+
+    .online-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .conn-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--text-muted);
+    }
+
+    .conn-status-badge .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .conn-status-badge.status-connecting .status-dot {
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+      animation: pulseDot 1s infinite;
+    }
+
+    .conn-status-badge.status-connected {
+      border-color: #00f5d4;
+      color: #00f5d4;
+      background: rgba(0, 245, 212, 0.1);
+    }
+
+    .conn-status-badge.status-connected .status-dot {
+      background: #00f5d4;
+      box-shadow: 0 0 10px #00f5d4;
+    }
+
+    .conn-status-badge.status-error,
+    .conn-status-badge.status-disconnected {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: rgba(255, 42, 133, 0.12);
+    }
+
+    .conn-status-badge.status-error .status-dot,
+    .conn-status-badge.status-disconnected .status-dot {
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+    }
+
+    .online-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-neon-outline {
+      padding: 11px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--secondary);
+      color: #ffffff;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.2);
+      transition: all 0.25s var(--transition-smooth);
+    }
+
+    .btn-neon-outline:hover:not(:disabled) {
+      background: rgba(0, 240, 255, 0.16);
+      box-shadow: 0 0 22px var(--secondary-glow);
+      transform: translateY(-2px);
+    }
+
+    .btn-neon-outline.pink {
+      border-color: var(--primary);
+      box-shadow: 0 0 14px rgba(255, 42, 133, 0.22);
+    }
+
+    .btn-neon-outline.pink:hover:not(:disabled) {
+      background: rgba(255, 42, 133, 0.18);
+      box-shadow: 0 0 22px var(--primary-glow);
+    }
+
+    .btn-neon-outline:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .room-code-panel {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(12, 5, 28, 0.85);
+      border: 1px dashed var(--secondary);
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+
+    .room-code-panel.active {
+      display: flex;
+    }
+
+    .room-code-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .room-code-value {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.35rem;
+      letter-spacing: 0.22em;
+      color: var(--secondary);
+      text-shadow: 0 0 12px var(--secondary-glow);
+    }
+
+    .btn-copy-code {
+      padding: 7px 12px;
+      border-radius: 9px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-copy-code:hover {
+      background: var(--secondary);
+      color: #070312;
+    }
+
+    .join-room-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .room-code-input {
+      flex: 1;
+      background: rgba(6, 3, 16, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 11px;
+      padding: 10px 12px;
+      color: #ffffff;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.95rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .room-code-input:focus {
+      border-color: var(--secondary);
+      box-shadow: 0 0 14px var(--secondary-glow);
+    }
+
+    .online-status-msg {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      min-height: 18px;
+    }
+
+    .arena-online-bar {
+      display: none;
+      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      background: var(--glass-bg-strong);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      backdrop-filter: blur(16px);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .arena-online-bar.visible {
+      display: flex;
+    }
+
+    /* ==========================================================================
+       6. GAME ARENA SCREEN
+       ========================================================================== */
+    .arena-container {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(12px, 2.2vh, 20px);
+      padding-top: 38px;
+    }
+
+    /* Scoreboard HUD */
+    .hud-scoreboard {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 12px 16px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .player-card {
+      display: flex;
+      flex-direction: column;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.03);
+      transition: all 0.35s var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .player-card.p-x { align-items: flex-start; }
+    .player-card.p-o { align-items: flex-end; text-align: right; }
+
+    .player-card.active-turn.p-x {
+      background: rgba(255, 42, 133, 0.14);
+      border-color: var(--primary);
+      box-shadow: 0 0 22px var(--primary-glow);
+      transform: translateY(-2px);
+    }
+
+    .player-card.active-turn.p-o {
+      background: rgba(0, 240, 255, 0.14);
+      border-color: var(--secondary);
+      box-shadow: 0 0 22px var(--secondary-glow);
+      transform: translateY(-2px);
+    }
+
+    .p-role {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-style: italic;
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .p-x .p-role { color: var(--primary); }
+    .p-o .p-role { color: var(--secondary); }
+
+    .p-name {
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 130px;
+    }
+
+    .p-score {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 1.65rem;
+      line-height: 1.1;
+      margin-top: 2px;
+    }
+
+    .hud-center-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 0 6px;
+    }
+
+    .vs-badge {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-style: italic;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      text-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .draw-counter {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* Turn Status Banner */
+    .turn-indicator-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 22px;
+      border-radius: 999px;
+      background: var(--glass-bg-strong);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .turn-indicator-pill.x-turn {
+      border-color: var(--primary);
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+
+    .turn-indicator-pill.o-turn {
+      border-color: var(--secondary);
+      box-shadow: 0 0 20px var(--secondary-glow);
+    }
+
+    .turn-pulse {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 12px var(--primary);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    .turn-indicator-pill.o-turn .turn-pulse {
+      background: var(--secondary);
+      box-shadow: 0 0 12px var(--secondary);
+    }
+
+    /* Encouragement / Hype Banner During Active Play */
+    .hype-banner {
+      min-height: 24px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      background: rgba(186, 230, 253, 0.08);
+      border: 1px solid rgba(186, 230, 253, 0.22);
+      color: #e0f2fe;
+      font-family: var(--font-ui);
+      font-weight: 700;
+      font-size: 0.84rem;
+      letter-spacing: 0.06em;
+      text-align: center;
+      text-shadow: 0 0 12px rgba(125, 211, 252, 0.45);
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.3s var(--transition-smooth), transform 0.3s var(--transition-smooth);
+    }
+
+    .hype-banner.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 3x3 Glassmorphism Game Board */
+    .board-frame {
+      position: relative;
+      width: min(88vw, 390px);
+      aspect-ratio: 1 / 1;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 14px;
+      box-shadow:
+        0 28px 70px rgba(0, 0, 0, 0.72),
+        0 0 35px rgba(255, 42, 133, 0.18),
+        inset 0 0 28px rgba(255, 255, 255, 0.04);
+    }
+
+    .board-grid {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 12px;
+      position: relative;
+    }
+
+    .cell {
+      position: relative;
+      background: rgba(8, 4, 20, 0.56);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition:
+        transform 0.22s var(--transition-smooth),
+        background 0.25s,
+        border-color 0.25s,
+        box-shadow 0.25s;
+      overflow: hidden;
+    }
+
+    /* Hover Glow & Ghost Preview on Empty Cells */
+    .cell:not(.taken):not(.locked):hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: scale(1.03);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.14);
+    }
+
+    .board-grid.turn-x .cell:not(.taken):not(.locked):hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 22px var(--primary-glow), inset 0 0 14px rgba(255, 42, 133, 0.18);
+    }
+
+    .board-grid.turn-o .cell:not(.taken):not(.locked):hover {
+      border-color: var(--secondary);
+      box-shadow: 0 0 22px var(--secondary-glow), inset 0 0 14px rgba(0, 240, 255, 0.18);
+    }
+
+    .cell:not(.taken):not(.locked):active {
+      transform: scale(0.95);
+    }
+
+    .cell.taken, .cell.locked {
+      cursor: default;
+    }
+
+    .cell.win-cell.x-cell {
+      background: rgba(255, 42, 133, 0.22);
+      border-color: var(--primary);
+      box-shadow: 0 0 28px var(--primary-glow), inset 0 0 18px var(--primary-glow);
+      animation: winCellPulse 1.2s ease-in-out infinite alternate;
+    }
+
+    .cell.win-cell.o-cell {
+      background: rgba(0, 240, 255, 0.22);
+      border-color: var(--secondary);
+      box-shadow: 0 0 28px var(--secondary-glow), inset 0 0 18px var(--secondary-glow);
+      animation: winCellPulse 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes winCellPulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.04); }
+    }
+
+    /* Ghost Symbol on Hover */
+    .ghost-symbol {
+      width: 56%;
+      height: 56%;
+      opacity: 0;
+      transform: scale(0.75);
+      transition: opacity 0.2s ease, transform 0.22s var(--transition-smooth);
+      pointer-events: none;
+    }
+
+    .cell:not(.taken):not(.locked):hover .ghost-symbol {
+      opacity: 0.26;
+      transform: scale(1);
+    }
+
+    /* Placed Neon SVG Symbols */
+    .neon-symbol {
+      width: 64%;
+      height: 64%;
+      overflow: visible;
+      animation: symbolPop 0.38s var(--transition-smooth) forwards;
+    }
+
+    @keyframes symbolPop {
+      0% { transform: scale(0.45) rotate(-8deg); opacity: 0; }
+      70% { transform: scale(1.08) rotate(2deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .neon-x-stroke {
+      stroke: var(--primary);
+      stroke-width: 11;
+      stroke-linecap: round;
+      fill: none;
+      filter: drop-shadow(0 0 8px var(--primary)) drop-shadow(0 0 18px var(--primary-glow));
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: drawStroke 0.35s ease-out forwards;
+    }
+
+    .neon-x-stroke.line-2 {
+      animation-delay: 0.1s;
+    }
+
+    .neon-o-stroke {
+      stroke: var(--secondary);
+      stroke-width: 10.5;
+      stroke-linecap: round;
+      fill: none;
+      filter: drop-shadow(0 0 8px var(--secondary)) drop-shadow(0 0 18px var(--secondary-glow));
+      stroke-dasharray: 220;
+      stroke-dashoffset: 220;
+      animation: drawStroke 0.42s ease-out forwards;
+    }
+
+    @keyframes drawStroke {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* Animated Winning Strike Line Overlay */
+    .win-line-svg {
+      position: absolute;
+      inset: 14px;
+      width: calc(100% - 28px);
+      height: calc(100% - 28px);
+      pointer-events: none;
+      z-index: 15;
+      overflow: visible;
+    }
+
+    #win-strike-line {
+      stroke: #ffffff;
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 420;
+      stroke-dashoffset: 420;
+      opacity: 0;
+      transition: stroke-dashoffset 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.15s ease;
+    }
+
+    #win-strike-line.show {
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+
+    #win-strike-line.x-win {
+      stroke: #fff0f7;
+      filter: drop-shadow(0 0 8px var(--primary)) drop-shadow(0 0 22px var(--primary));
+    }
+
+    #win-strike-line.o-win {
+      stroke: #e6fcff;
+      filter: drop-shadow(0 0 8px var(--secondary)) drop-shadow(0 0 22px var(--secondary));
+    }
+
+    /* Arena Action Controls */
+    .arena-actions {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn-glass {
+      padding: 13px 18px;
+      border-radius: var(--radius-md);
+      background: var(--glass-bg);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.84rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+      transition: all 0.25s var(--transition-smooth);
+    }
+
+    .btn-glass:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--secondary);
+      box-shadow: 0 0 22px var(--secondary-glow);
+      transform: translateY(-2px);
+    }
+
+    .btn-glass.primary-tint:hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 22px var(--primary-glow);
+    }
+
+    .btn-glass:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    /* ==========================================================================
+       7. CINEMATIC VICTORY / DRAW OVERLAY MODAL
+       ========================================================================== */
+    .result-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(5, 2, 14, 0.68);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.45s var(--transition-smooth);
+    }
+
+    .result-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .result-modal {
+      width: 100%;
+      max-width: 440px;
+      background: var(--glass-bg-strong);
+      backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: var(--radius-lg);
+      padding: 32px 26px;
+      text-align: center;
+      box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.85),
+        0 0 45px var(--primary-glow);
+      transform: scale(0.86) translateY(24px);
+      transition: transform 0.5s var(--transition-smooth);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .result-overlay.visible .result-modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .result-kicker {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.78rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
+      text-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .result-headline {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-style: italic;
+      font-size: clamp(2.1rem, 6vw, 3.1rem);
+      line-height: 1;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #ffffff 20%, var(--primary) 95%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 22px var(--primary-glow));
+    }
+
+    .result-headline.o-winner {
+      background: linear-gradient(180deg, #ffffff 20%, var(--secondary) 95%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      filter: drop-shadow(0 0 22px var(--secondary-glow));
+    }
+
+    .result-headline.draw-result {
+      background: linear-gradient(180deg, #ffffff 20%, var(--accent) 95%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      filter: drop-shadow(0 0 22px var(--accent-glow));
+    }
+
+    .result-subtext {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .result-buttons {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    /* ==========================================================================
+       8. RESPONSIVE ADAPTATIONS (MOBILE / TABLET)
+       ========================================================================== */
+    @media (max-width: 600px) {
+      .setup-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .online-actions-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .brand-tag span {
+        display: none;
+      }
+
+      input[type="range"].volume-slider {
+        width: 52px;
+      }
+
+      .p-name {
+        max-width: 92px;
+        font-size: 0.88rem;
+      }
+
+      .board-frame {
+        padding: 10px;
+      }
+
+      .board-grid {
+        gap: 9px;
+      }
+
+      .win-line-svg {
+        inset: 10px;
+        width: calc(100% - 20px);
+        height: calc(100% - 20px);
+      }
+    }
+
+    @media (max-height: 700px) {
+      .hero-header {
+        margin-bottom: 10px;
+        padding-top: 38px;
+      }
+      .setup-card {
+        padding: 14px 18px;
+        gap: 12px;
+      }
+      .btn-play-now {
+        padding: 12px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Procedural Vice City Miami Sunset & Palm Skyline Canvas -->
+  <canvas id="vice-bg-canvas"></canvas>
+
+  <!-- Neon Confetti Particle Canvas -->
+  <canvas id="confetti-canvas"></canvas>
+  <!-- Subtle Film Grain, Cool Ruteng Mist & Vignette -->
+  <div class="cold-mist-layer"></div>
+  <div class="cinema-grain"></div>
+
+  <!-- Cinematic Opening Screen: RJRM.GAMES -->
+  <div class="opening-splash" id="opening-splash" role="button" tabindex="0" aria-label="Lewati pembuka RJRM.GAMES">
+    <div class="opening-studio-tag">MEMPERSEMBAHKAN</div>
+    <div class="opening-brand-title">RJRM.GAMES</div>
+    <div class="opening-neon-bar"></div>
+    <div class="opening-skip-hint">KETUK DIMANA SAJA PAR MASUK</div>
+  </div>
+
+  <!-- Top Floating Utility Bar: Brand Indicator, Theme Switcher, Volume Control -->
+  <header class="top-utility-bar">
+    <div class="utility-group">
+      <div class="brand-tag">
+        <span class="brand-dot"></span>
+        <span>RUTENG CITY // VI</span>
+      </div>
+      <div class="theme-selector" title="Switch Ruteng City Theme">
+        <button class="theme-btn active" data-set-theme="vice" aria-label="Vice Sunset Theme"></button>
+        <button class="theme-btn" data-set-theme="ocean" aria-label="Ocean Drive Theme"></button>
+        <button class="theme-btn" data-set-theme="midnight" aria-label="Midnight Neon Theme"></button>
+      </div>
+    </div>
+
+    <div class="utility-group audio-control">
+      <button class="icon-btn" id="bgm-toggle-btn" aria-label="Toggle Oasis Backsound" title="Backsound Oasis">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V5l12-2v13"/>
+          <circle cx="6" cy="18" r="3"/>
+          <circle cx="18" cy="16" r="3"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="fullscreen-toggle-btn" aria-label="Toggle Fullscreen" title="Full Layar">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="mute-toggle-btn" aria-label="Toggle Sound">
+        <!-- Speaker SVG injected via JS -->
+      </button>
+      <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="65" aria-label="Audio Volume" />
+    </div>
+  </header>
+
+  <!-- Main Application Shell -->
+  <main class="app-wrapper">
+
+    <!-- ======================================================================
+       SCREEN 1: LANDING PAGE & MATCH CONFIGURATION
+       ====================================================================== -->
+    <section id="landing-screen" class="screen active entering">
+      <div class="hero-header">
+        <div class="edition-pill">★ EDISI RUTENG KOTA DINGIN ★</div>
+        <div class="hero-title-wrap">
+          <h1 class="hero-title">TIC TAC TOE</h1>
+        </div>
+        <p class="hero-subtitle">PERANG BESAR X &amp; O DI KOTA RUTENG</p>
+      </div>
+
+      <div class="setup-card">
+        <div class="setup-grid">
+          <!-- Game Mode Selector -->
+          <div class="control-block full-span">
+            <label class="control-label">MODE MAIN</label>
+            <div class="segmented-group three-cols" id="mode-selector">
+              <button type="button" class="seg-btn active" data-mode="pvai">LAWAN AI</button>
+              <button type="button" class="seg-btn cyan-active" data-mode="pvp">2 ORANG (LOKAL)</button>
+              <button type="button" class="seg-btn" data-mode="online">LAWAN TEMAN (2 HP)</button>
+            </div>
+          </div>
+
+          <!-- Online Multiplayer Lobby (Create / Join Room via PeerJS + BroadcastChannel) -->
+          <div class="control-block full-span online-lobby-box" id="online-lobby-box">
+            <div class="online-top-row">
+              <span class="control-label" style="margin:0;">LAWAN TEMAN LANGSUNG (P2P)</span>
+              <div class="conn-status-badge" id="lobby-conn-badge">
+                <span class="status-dot"></span>
+                <span id="lobby-conn-text">SIAP</span>
+              </div>
+            </div>
+
+            <div class="online-actions-grid">
+              <button type="button" class="btn-neon-outline pink" id="create-room-btn">BUAT ROOM (HOST X)</button>
+              <button type="button" class="btn-neon-outline" id="disconnect-room-btn" disabled>PUTUS ROOM</button>
+            <div class="online-status-msg" id="online-status-msg">Buat room baru atau masuk pake kode 6 huruf dari teman par lawan teman.</div>
+          </div>
+
+            <div class="room-code-panel" id="room-code-panel">
+              <div>
+                <div class="room-code-label">KODE ROOM BETA</div>
+                <div class="room-code-value" id="created-room-code">------</div>
+              </div>
+              <button type="button" class="btn-copy-code" id="copy-room-btn">SALIN KODE</button>
+            </div>
+
+            <div class="join-room-row">
+              <input type="text" id="join-room-input" class="room-code-input" maxlength="6" placeholder="MASUK KODE (CTH. RTG84)" />
+              <button type="button" class="btn-neon-outline" id="join-room-btn">MASUK ROOM</button>
+            </div>
+
+            <div class="online-status-msg" id="online-status-msg">Buat room baru atau masuk pake kode 6 huruf dari teman par main online.</div>
+          </div>
+
+          <!-- AI Difficulty Selector -->
+          <div class="control-block full-span" id="difficulty-container">
+            <label class="control-label">TINGKAT SUSAH AI</label>
+            <div class="segmented-group three-cols" id="difficulty-selector">
+              <button type="button" class="seg-btn" data-diff="easy">GAMPANG</button>
+              <button type="button" class="seg-btn active" data-diff="medium">SEDANG</button>
+              <button type="button" class="seg-btn cyan-active" data-diff="hard">SUSAH SEKALI</button>
+            </div>
+          </div>
+
+          <!-- Player X Name -->
+          <div class="control-block">
+            <label class="control-label" for="player-x-input">NAMA PEMAIN X</label>
+            <div class="name-input-wrap">
+              <span class="symbol-badge x-badge">X</span>
+              <input type="text" id="player-x-input" class="vice-input" maxlength="14" placeholder="JASON" value="JASON" />
+            </div>
+          </div>
+
+          <!-- Player O Name -->
+          <div class="control-block">
+            <label class="control-label" for="player-o-input">NAMA PEMAIN O</label>
+            <div class="name-input-wrap">
+              <span class="symbol-badge o-badge">O</span>
+              <input type="text" id="player-o-input" class="vice-input o-input" maxlength="14" placeholder="LUCIA" value="LUCIA" />
+            </div>
+          </div>
+
+          <!-- Persistent Career Stats -->
+          <div class="control-block full-span">
+            <div class="control-label">
+              <span>CATATAN SKOR (TERSIMPAN)</span>
+              <button type="button" class="reset-stats-link" id="reset-stats-btn">HAPUS SKOR</button>
+            </div>
+            <div class="career-stats-bar">
+              <div class="stat-mini">
+                <span class="stat-mini-val win-col" id="stat-wins">0</span>
+                <span class="stat-mini-lbl">X MENANG</span>
+              </div>
+              <div class="stat-mini">
+                <span class="stat-mini-val draw-col" id="stat-draws">0</span>
+                <span class="stat-mini-lbl">SERI</span>
+              </div>
+              <div class="stat-mini">
+                <span class="stat-mini-val loss-col" id="stat-losses">0</span>
+                <span class="stat-mini-lbl">O / AI MENANG</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn-play-now" id="play-now-btn">MAIN SU</button>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SCREEN 2: GAMEPLAY ARENA
+         ====================================================================== -->
+    <section id="game-screen" class="screen">
+      <div class="arena-container">
+        <!-- Online Connection Strip inside Arena -->
+        <div class="arena-online-bar" id="arena-online-bar">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span class="conn-status-badge status-connected" id="arena-conn-badge">
+              <span class="status-dot"></span>
+              <span id="arena-conn-text">TERHUBUNG</span>
+            </span>
+            <span id="arena-role-label" style="color:var(--text-muted);">BETA PEGANG: X</span>
+        </div>
+        <span id="arena-room-tag" style="font-family:var(--font-display);font-weight:900;color:var(--secondary);letter-spacing:0.14em;">ROOM: ------</span>
+      </div>
+          <span id="arena-room-tag" style="font-family:var(--font-display);font-weight:900;color:var(--secondary);letter-spacing:0.14em;">ROOM: ------</span>
+        </div>
+
+        <!-- Session Scoreboard HUD -->
+        <div class="hud-scoreboard">
+          <div class="player-card p-x active-turn" id="card-x">
+            <span class="p-role">TIM X</span>
+            <span class="p-name" id="hud-name-x">JASON</span>
+            <span class="p-score" id="session-score-x">0</span>
+          </div>
+
+          <div class="hud-center-info">
+            <span class="vs-badge" id="hud-mode-badge">LAWAN AI</span>
+            <span class="draw-counter">SERI: <strong id="session-score-draw">0</strong></span>
+          </div>
+
+          <div class="player-card p-o" id="card-o">
+            <span class="p-role">TIM O</span>
+            <span class="p-name" id="hud-name-o">RUTENG AI</span>
+            <span class="p-score" id="session-score-o">0</span>
+          </div>
+        </div>
+
+        <!-- Turn Indicator Pill -->
+        <div class="turn-indicator-pill x-turn" id="turn-pill">
+          <span class="turn-pulse"></span>
+          <span id="turn-text">GILIRAN JASON (X)</span>
+        </div>
+
+        <!-- Encouragement Banner During Gameplay -->
+        <div class="hype-banner show" id="hype-banner">Udara Ruteng dingin, tapi mental musti tetap panas!</div>
+
+        <!-- 3x3 Neon Glassmorphism Board -->
+        <div class="board-frame">
+          <div class="board-grid turn-x" id="board-grid">
+            <!-- 9 Cells dynamically populated for clean structure -->
+          </div>
+
+          <!-- SVG Winning Strike Line -->
+          <svg class="win-line-svg" viewBox="0 0 300 300" preserveAspectRatio="none">
+            <line id="win-strike-line" x1="0" y1="0" x2="0" y2="0" />
+          </svg>
+        </div>
+
+        <!-- Arena Control Buttons -->
+        <div class="arena-actions">
+          <button type="button" class="btn-glass" id="back-menu-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <span id="back-menu-label">MENU</span>
+          </button>
+          <button type="button" class="btn-glass primary-tint" id="restart-game-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span id="restart-btn-label">MAIN LAGI SU</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========================================================================
+       CINEMATIC VICTORY / DRAW OVERLAY MODAL
+       ======================================================================== -->
+  <div class="result-overlay" id="result-overlay">
+    <div class="result-modal">
+      <span class="result-kicker" id="result-kicker">RONDE SUDA SELESAI</span>
+      <h2 class="result-headline" id="result-headline">MENANG BESAR</h2>
+      <p class="result-subtext" id="result-subtext">JASON KUASAI KOTA VICE</p>
+      <div class="result-buttons">
+        <button type="button" class="btn-play-now" id="modal-play-again-btn">MAIN LAGI SU</button>
+        <button type="button" class="btn-glass" id="modal-menu-btn">KELUAR / MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       PURE VANILLA JAVASCRIPT ENGINE + REAL-TIME ONLINE MULTIPLAYER
+       ======================================================================== -->
+  <script>
+    /**
+     * TIC TAC TOE — VICE EDITION
+     * Complete single-file architecture:
+     * 1. StorageManager: LocalStorage persistence for settings & stats
+     * 2. SynthAudioEngine: Procedural Web Audio API synthwave sound effects
+     * 3. ViceBackdropRenderer: Full-screen Miami Sunset, Skyline, Palm Trees & Ocean Reflection
+     * 4. ConfettiEngine: Neon particle celebration on victory
+     * 5. ViceAI: Easy, Medium, and Unbeatable Minimax AI
+     * 6. TicTacToeGame: State machine, DOM bindings & animations
+     */
+
+    /* ==========================================================================
+       1. STORAGE MANAGER (LocalStorage)
+       ========================================================================== */
+    const STORAGE_KEY = 'vice_ttt_save_v1';
+
+    const defaultSaveData = {
+      theme: 'vice',
+      volume: 65,
+      muted: false,
+      bgmEnabled: true,
+      mode: 'pvai',
+      difficulty: 'medium',
+      playerX: 'JASON',
+      playerO: 'LUCIA',
+      stats: {
+        xWins: 0,
+        oWins: 0,
+        draws: 0
+      }
+    };
+
+    function loadSaveData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultSaveData);
+        const parsed = JSON.parse(raw);
+        return {
+          ...structuredClone(defaultSaveData),
+          ...parsed,
+          stats: {
+            ...defaultSaveData.stats,
+            ...(parsed.stats || {})
+          }
+        };
+      } catch (e) {
+        return structuredClone(defaultSaveData);
+      }
+    }
+
+    function persistSaveData(data) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+        // Ignore storage quota errors in restricted sandboxes
+      }
+    }
+
+    /* ==========================================================================
+       2. PROCEDURAL WEB AUDIO SYNTHESIZER (NO EXTERNAL AUDIO FILES)
+       ========================================================================== */
+    class SynthAudioEngine {
+      constructor(volume = 0.65, muted = false, bgmEnabled = true) {
+        this.ctx = null;
+        this.volume = volume;
+        this.muted = muted;
+        this.bgmEnabled = bgmEnabled;
+        this.bgmTimer = null;
+        this.bgmStep = 0;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            this.ctx = new AudioCtx();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      setVolume(val0to100) {
+        this.volume = Math.max(0, Math.min(1, val0to100 / 100));
+      }
+
+      setMuted(isMuted) {
+        this.muted = isMuted;
+        if (this.muted || !this.bgmEnabled) {
+          this.stopOasisBacksound();
+        } else {
+          this.startOasisBacksound();
+        }
+      }
+
+      setBgmEnabled(enabled) {
+        this.bgmEnabled = Boolean(enabled);
+        if (this.bgmEnabled && !this.muted) {
+          this.startOasisBacksound();
+        } else {
+          this.stopOasisBacksound();
+        }
+      }
+
+      playGuitarStrum(freqs, duration = 0.42, gain = 0.08, delay = 0, bright = false) {
+        if (this.muted || !this.bgmEnabled || this.volume <= 0.001) return;
+        this.init();
+        if (!this.ctx) return;
+
+        freqs.forEach((freq, idx) => {
+          const now = this.ctx.currentTime + delay + idx * 0.022;
+          const osc = this.ctx.createOscillator();
+          const filter = this.ctx.createBiquadFilter();
+          const amp = this.ctx.createGain();
+
+          osc.type = bright ? 'sawtooth' : 'triangle';
+          osc.frequency.setValueAtTime(freq, now);
+
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(bright ? 2200 : 1450, now);
+          filter.frequency.exponentialRampToValueAtTime(520, now + duration);
+
+          const effGain = (gain / Math.max(1, freqs.length * 0.65)) * this.volume;
+          amp.gain.setValueAtTime(0.0001, now);
+          amp.gain.linearRampToValueAtTime(effGain, now + 0.018);
+          amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+          osc.connect(filter);
+          filter.connect(amp);
+          amp.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + duration + 0.03);
+        });
+      }
+
+      playAnthemLead(freq, duration = 0.36, gain = 0.075, delay = 0) {
+        if (this.muted || !this.bgmEnabled || this.volume <= 0.001) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime + delay;
+        const osc = this.ctx.createOscillator();
+        const amp = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+
+        const effGain = gain * this.volume;
+        amp.gain.setValueAtTime(0.0001, now);
+        amp.gain.linearRampToValueAtTime(effGain, now + 0.03);
+        amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(amp);
+        amp.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.03);
+      }
+
+      startOasisBacksound() {
+        if (!this.bgmEnabled || this.muted || this.volume <= 0.001) return;
+        this.init();
+        if (!this.ctx) return;
+        if (this.bgmTimer) return;
+
+        // Britpop / Oasis-inspired chord progression (C major -> G -> Am -> F / anthem cadence)
+        const progression = [
+          { chords: [261.63, 329.63, 392.00], lead: [523.25, 587.33, 659.25, 587.33] },
+          { chords: [196.00, 293.66, 392.00], lead: [493.88, 587.33, 493.88, 392.00] },
+          { chords: [220.00, 261.63, 329.63], lead: [440.00, 523.25, 587.33, 659.25] },
+          { chords: [174.61, 261.63, 349.23], lead: [587.33, 523.25, 440.00, 392.00] }
+        ];
+
+        const tickMs = 340;
+        this.bgmTimer = setInterval(() => {
+          if (this.muted || !this.bgmEnabled || this.volume <= 0.001) return;
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+
+          const barIndex = Math.floor(this.bgmStep / 4) % progression.length;
+          const beatInBar = this.bgmStep % 4;
+          const currentBar = progression[barIndex];
+
+          if (beatInBar === 0 || beatInBar === 2) {
+            this.playGuitarStrum(currentBar.chords, 0.52, beatInBar === 0 ? 0.095 : 0.065, 0, beatInBar === 0);
+          } else {
+            this.playGuitarStrum(currentBar.chords.slice(1), 0.26, 0.045, 0, false);
+          }
+
+          const leadNote = currentBar.lead[beatInBar];
+          if (leadNote) {
+            this.playAnthemLead(leadNote, 0.34, 0.068, 0.04);
+          }
+
+          this.bgmStep++;
+        }, tickMs);
+      }
+
+      stopOasisBacksound() {
+        if (this.bgmTimer) {
+          clearInterval(this.bgmTimer);
+          this.bgmTimer = null;
+        }
+      }
+
+      playTone({ freq = 440, endFreq = null, type = 'sine', duration = 0.15, gain = 0.25, delay = 0 }) {
+        if (this.muted || this.volume <= 0.001) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime + delay;
+        const osc = this.ctx.createOscillator();
+        const amp = this.ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        if (endFreq !== null) {
+          osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + duration);
+        }
+
+        const effectiveGain = gain * this.volume;
+        amp.gain.setValueAtTime(0.0001, now);
+        amp.gain.linearRampToValueAtTime(effectiveGain, now + 0.012);
+        amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(amp);
+        amp.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.02);
+      }
+
+      playClick() {
+        this.playTone({ freq: 620, endFreq: 920, type: 'triangle', duration: 0.09, gain: 0.18 });
+      }
+
+      playStart() {
+        // Retro synthwave power-up sweep
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((n, idx) => {
+          this.playTone({
+            freq: n,
+            endFreq: n * 1.02,
+            type: 'sawtooth',
+            duration: 0.24,
+            gain: 0.14,
+            delay: idx * 0.06
+          });
+        });
+      }
+
+      playPlaceX() {
+        // Punchy neon pink synth pluck
+        this.playTone({ freq: 330, endFreq: 660, type: 'sawtooth', duration: 0.16, gain: 0.2 });
+        this.playTone({ freq: 660, endFreq: 880, type: 'sine', duration: 0.14, gain: 0.15, delay: 0.03 });
+      }
+
+      playPlaceO() {
+        // Smooth electric cyan harmonic bell
+        this.playTone({ freq: 440, endFreq: 554.37, type: 'triangle', duration: 0.18, gain: 0.22 });
+        this.playTone({ freq: 880, endFreq: 880, type: 'sine', duration: 0.16, gain: 0.12, delay: 0.02 });
+      }
+
+      playWin() {
+        // Grand Vice City Victory Arpeggio
+        const chord = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+        chord.forEach((freq, i) => {
+          this.playTone({
+            freq,
+            type: i % 2 === 0 ? 'triangle' : 'sawtooth',
+            duration: 0.45,
+            gain: 0.18,
+            delay: i * 0.085
+          });
+        });
+      }
+
+      playDefeat() {
+        // Cinematic low synth bass drop
+        this.playTone({ freq: 220, endFreq: 65, type: 'sawtooth', duration: 0.55, gain: 0.24 });
+        this.playTone({ freq: 164.81, endFreq: 55, type: 'triangle', duration: 0.6, gain: 0.22, delay: 0.12 });
+        // Taunting staccato synth laugh ("ha-ha-ha-haaa")
+        this.playLaugh();
+      }
+
+      playLaugh() {
+        if (this.muted || this.volume <= 0.001) return;
+        this.init();
+        if (!this.ctx) return;
+
+        // Four rising-then-drooping chuckles followed by a longer mocking laugh
+        const syllables = [
+          { delay: 0.22, duration: 0.11, startFreq: 310, peakFreq: 490, endFreq: 250, gain: 0.22 },
+          { delay: 0.36, duration: 0.11, startFreq: 340, peakFreq: 540, endFreq: 270, gain: 0.24 },
+          { delay: 0.50, duration: 0.12, startFreq: 370, peakFreq: 590, endFreq: 290, gain: 0.25 },
+          { delay: 0.65, duration: 0.30, startFreq: 410, peakFreq: 640, endFreq: 210, gain: 0.26 }
+        ];
+
+        syllables.forEach((syl) => {
+          const now = this.ctx.currentTime + syl.delay;
+
+          // Formant-like dual oscillators (sawtooth + triangle) for vocal/synth chuckle character
+          const oscMain = this.ctx.createOscillator();
+          const oscOver = this.ctx.createOscillator();
+          const formantFilter = this.ctx.createBiquadFilter();
+          const amp = this.ctx.createGain();
+
+          oscMain.type = 'sawtooth';
+          oscOver.type = 'triangle';
+
+          oscMain.frequency.setValueAtTime(syl.startFreq, now);
+          oscMain.frequency.exponentialRampToValueAtTime(syl.peakFreq, now + syl.duration * 0.42);
+          oscMain.frequency.exponentialRampToValueAtTime(syl.endFreq, now + syl.duration);
+
+          oscOver.frequency.setValueAtTime(syl.startFreq * 1.5, now);
+          oscOver.frequency.exponentialRampToValueAtTime(syl.peakFreq * 1.5, now + syl.duration * 0.42);
+          oscOver.frequency.exponentialRampToValueAtTime(syl.endFreq * 1.25, now + syl.duration);
+
+          formantFilter.type = 'bandpass';
+          formantFilter.frequency.setValueAtTime(950, now);
+          formantFilter.frequency.linearRampToValueAtTime(1450, now + syl.duration * 0.45);
+          formantFilter.frequency.linearRampToValueAtTime(780, now + syl.duration);
+          formantFilter.Q.setValueAtTime(3.2, now);
+
+          const effGain = syl.gain * this.volume;
+          amp.gain.setValueAtTime(0.0001, now);
+          amp.gain.linearRampToValueAtTime(effGain, now + 0.025);
+          amp.gain.exponentialRampToValueAtTime(0.0001, now + syl.duration);
+
+          oscMain.connect(formantFilter);
+          oscOver.connect(formantFilter);
+          formantFilter.connect(amp);
+          amp.connect(this.ctx.destination);
+
+          oscMain.start(now);
+          oscOver.start(now);
+          oscMain.stop(now + syl.duration + 0.02);
+          oscOver.stop(now + syl.duration + 0.02);
+        });
+      }
+
+      playDraw() {
+        // Neutral synth pulse
+        this.playTone({ freq: 392, endFreq: 349.23, type: 'triangle', duration: 0.22, gain: 0.18 });
+        this.playTone({ freq: 349.23, endFreq: 329.63, type: 'triangle', duration: 0.28, gain: 0.18, delay: 0.18 });
+      }
+    }
+
+    /* ==========================================================================
+       3. FULL-SCREEN VICE CITY MIAMI SUNSET & SKYLINE CANVAS RENDERER
+       ========================================================================== */
+    class ViceBackdropRenderer {
+      constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.width = 0;
+        this.height = 0;
+        this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+        this.time = 0;
+
+        this.particles = [];
+        this.frostMotes = [];
+        this.buildings = [];
+        this.stars = [];
+
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+      }
+
+      getThemeColors() {
+        const styles = getComputedStyle(document.documentElement);
+        return {
+          skyTop: styles.getPropertyValue('--bg-sky-top').trim() || '#090314',
+          skyMid: styles.getPropertyValue('--bg-sky-mid').trim() || '#280a3d',
+          skyLow: styles.getPropertyValue('--bg-sky-low').trim() || '#8f1d68',
+          horizon: styles.getPropertyValue('--bg-horizon').trim() || '#ff5e3a',
+          sunTop: styles.getPropertyValue('--sun-top').trim() || '#ffdf5d',
+          sunMid: styles.getPropertyValue('--sun-mid').trim() || '#ff5e3a',
+          sunBot: styles.getPropertyValue('--sun-bot').trim() || '#ff007f',
+          primary: styles.getPropertyValue('--primary').trim() || '#ff2a85',
+          secondary: styles.getPropertyValue('--secondary').trim() || '#00f0ff'
+        };
+      }
+
+      resize() {
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = Math.floor(this.width * this.dpr);
+        this.canvas.height = Math.floor(this.height * this.dpr);
+        this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+
+        this.generateSceneElements();
+      }
+
+      generateSceneElements() {
+        // Floating neon dust motes / Miami warm air particles
+        const particleCount = Math.min(65, Math.floor((this.width * this.height) / 18000));
+        this.particles = Array.from({ length: particleCount }, () => ({
+          x: Math.random() * this.width,
+          y: Math.random() * this.height,
+          r: 1 + Math.random() * 2.4,
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: -0.15 - Math.random() * 0.45,
+          alpha: 0.25 + Math.random() * 0.65,
+          isPrimary: Math.random() > 0.45
+        }));
+
+        // Cold Ruteng mountain dew / ice crystal motes drifting gently
+        const frostCount = Math.min(58, Math.floor((this.width * this.height) / 19000));
+        this.frostMotes = Array.from({ length: frostCount }, () => ({
+          x: Math.random() * this.width,
+          y: Math.random() * this.height,
+          r: 1.2 + Math.random() * 2.6,
+          vx: -0.22 + Math.random() * 0.44,
+          vy: 0.28 + Math.random() * 0.65,
+          phase: Math.random() * Math.PI * 2,
+          alpha: 0.25 + Math.random() * 0.55
+        }));
+
+        // Upper sky stars
+        this.stars = Array.from({ length: 45 }, () => ({
+          x: Math.random() * this.width,
+          y: Math.random() * (this.height * 0.42),
+          r: 0.6 + Math.random() * 1.4,
+          phase: Math.random() * Math.PI * 2
+        }));
+
+        // Downtown Miami / Vice City Skyline Silhouette
+        this.buildings = [];
+        let curX = -20;
+        while (curX < this.width + 40) {
+          const bw = 28 + Math.random() * 54;
+          const bh = (this.height * 0.08) + Math.random() * (this.height * 0.21);
+          const hasSpire = Math.random() > 0.72;
+          const neonStrip = Math.random() > 0.48;
+          const isCyan = Math.random() > 0.5;
+
+          // Pre-compute glowing apartment/office windows
+          const windows = [];
+          const cols = Math.floor((bw - 10) / 8);
+          const rows = Math.floor((bh - 14) / 10);
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              if (Math.random() > 0.68) {
+                windows.push({
+                  rx: 6 + c * 8,
+                  ry: 8 + r * 10,
+                  warm: Math.random() > 0.35
+                });
+              }
+            }
+          }
+
+          this.buildings.push({
+            x: curX,
+            w: bw,
+            h: bh,
+            hasSpire,
+            neonStrip,
+            isCyan,
+            windows
+          });
+
+          curX += bw - (2 + Math.random() * 6);
+        }
+      }
+
+      drawPalmTree(ctx, baseX, baseY, scale, flip = 1, sway = 0) {
+        ctx.save();
+        ctx.translate(baseX, baseY);
+        ctx.scale(flip * scale, scale);
+
+        // Curved trunk
+        const tipX = 55 + sway * 14;
+        const tipY = -260;
+
+        ctx.beginPath();
+        ctx.moveTo(-10, 0);
+        ctx.quadraticCurveTo(15, -130, tipX - 3, tipY);
+        ctx.lineTo(tipX + 4, tipY);
+        ctx.quadraticCurveTo(26, -130, 8, 0);
+        ctx.closePath();
+        ctx.fillStyle = '#06020d';
+        ctx.fill();
+
+        // Palm fronds radiating from crown
+        ctx.translate(tipX, tipY);
+        const frondAngles = [-2.5, -1.9, -1.25, -0.55, 0.15, 0.75, 1.35];
+        frondAngles.forEach((angle, idx) => {
+          ctx.save();
+          ctx.rotate(angle + sway * 0.08 * (idx % 2 === 0 ? 1 : -1));
+          const len = 95 + (idx % 3) * 18;
+
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(len * 0.5, -24, len, 14);
+          ctx.quadraticCurveTo(len * 0.52, -6, 0, 4);
+          ctx.closePath();
+          ctx.fillStyle = '#06020d';
+          ctx.fill();
+
+          // Individual leaflets along frond
+          for (let i = 14; i < len - 8; i += 9) {
+            const drop = 16 + Math.sin((i / len) * Math.PI) * 16;
+            ctx.beginPath();
+            ctx.moveTo(i, -2);
+            ctx.lineTo(i - 4, drop);
+            ctx.lineTo(i + 2, -2);
+            ctx.fill();
+          }
+
+          ctx.restore();
+        });
+
+        ctx.restore();
+      }
+
+      render(timestamp) {
+        this.time = timestamp * 0.001;
+        const ctx = this.ctx;
+        const w = this.width;
+        const h = this.height;
+        const c = this.getThemeColors();
+        const horizonY = h * 0.67;
+
+        // 1. Deep Sunset Sky Gradient
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+        skyGrad.addColorStop(0, c.skyTop);
+        skyGrad.addColorStop(0.42, c.skyMid);
+        skyGrad.addColorStop(0.78, c.skyLow);
+        skyGrad.addColorStop(1, c.horizon);
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, w, horizonY + 2);
+
+        // 2. Twinkling Stars in Upper Atmosphere
+        this.stars.forEach(s => {
+          const twinkle = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(this.time * 2.2 + s.phase));
+          ctx.fillStyle = `rgba(255, 255, 255, ${twinkle * 0.7})`;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 3. Giant Vice City Retro Sunset Sun with Horizontal Scanline Slices
+        const sunRadius = Math.min(w, h) * 0.23;
+        const sunX = w * 0.5;
+        const sunY = horizonY - sunRadius * 0.32;
+
+        // Outer Atmospheric Sun Halo
+        const halo = ctx.createRadialGradient(sunX, sunY, sunRadius * 0.4, sunX, sunY, sunRadius * 2.4);
+        halo.addColorStop(0, 'rgba(255, 130, 60, 0.36)');
+        halo.addColorStop(0.5, 'rgba(255, 42, 133, 0.14)');
+        halo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = halo;
+        ctx.fillRect(0, 0, w, horizonY);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+        ctx.clip();
+
+        const sunGrad = ctx.createLinearGradient(0, sunY - sunRadius, 0, sunY + sunRadius);
+        sunGrad.addColorStop(0, c.sunTop);
+        sunGrad.addColorStop(0.52, c.sunMid);
+        sunGrad.addColorStop(1, c.sunBot);
+        ctx.fillStyle = sunGrad;
+        ctx.fillRect(sunX - sunRadius, sunY - sunRadius, sunRadius * 2, sunRadius * 2);
+
+        // Retro Horizontal Cutouts on Lower Half of Sun
+        const sliceStart = sunY + sunRadius * 0.05;
+        for (let i = 0; i < 7; i++) {
+          const progress = i / 7;
+          const sliceY = sliceStart + progress * (sunRadius * 0.92);
+          const sliceH = 2 + progress * 7;
+          ctx.clearRect(sunX - sunRadius, sliceY, sunRadius * 2, sliceH);
+          // Re-fill cutout with sky color behind sun
+          ctx.fillStyle = c.skyLow;
+          ctx.fillRect(sunX - sunRadius, sliceY, sunRadius * 2, sliceH);
+        }
+        ctx.restore();
+
+        // 4. Miami Downtown Skyline Silhouette
+        this.buildings.forEach(b => {
+          const topY = horizonY - b.h;
+          ctx.fillStyle = '#080312';
+          ctx.fillRect(b.x, topY, b.w, b.h + 2);
+
+          if (b.hasSpire) {
+            ctx.fillRect(b.x + b.w * 0.46, topY - 22, 3, 22);
+            // Blinking aviation beacon
+            const beacon = 0.4 + 0.6 * Math.sin(this.time * 4 + b.x);
+            ctx.fillStyle = `rgba(255, 42, 133, ${beacon})`;
+            ctx.beginPath();
+            ctx.arc(b.x + b.w * 0.475, topY - 23, 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Neon Crown Accent Strip
+          if (b.neonStrip) {
+            ctx.fillStyle = b.isCyan ? c.secondary : c.primary;
+            ctx.fillRect(b.x + 2, topY + 2, b.w - 4, 2.2);
+          }
+
+          // City Windows
+          b.windows.forEach(win => {
+            ctx.fillStyle = win.warm
+              ? 'rgba(255, 210, 125, 0.34)'
+              : 'rgba(0, 240, 255, 0.28)';
+            ctx.fillRect(b.x + win.rx, topY + win.ry, 3, 4);
+          });
+        });
+
+        // 5. Biscayne Bay / Ocean Water & Shimmering Neon Reflection
+        const waterGrad = ctx.createLinearGradient(0, horizonY, 0, h);
+        waterGrad.addColorStop(0, '#180629');
+        waterGrad.addColorStop(0.35, '#0b0317');
+        waterGrad.addColorStop(1, '#04010a');
+        ctx.fillStyle = waterGrad;
+        ctx.fillRect(0, horizonY, w, h - horizonY);
+
+        // Horizon Neon Glow Line
+        const hGlow = ctx.createLinearGradient(0, 0, w, 0);
+        hGlow.addColorStop(0, 'transparent');
+        hGlow.addColorStop(0.25, c.primary);
+        hGlow.addColorStop(0.5, c.sunTop);
+        hGlow.addColorStop(0.75, c.secondary);
+        hGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = hGlow;
+        ctx.fillRect(0, horizonY - 1, w, 2.5);
+
+        // Shimmering Sun & Neon Wave Ripples on Water
+        const waveRows = 26;
+        for (let i = 0; i < waveRows; i++) {
+          const t = i / waveRows;
+          const wy = horizonY + 6 + Math.pow(t, 1.35) * (h - horizonY - 10);
+          const waveWidth = sunRadius * (1.7 - t * 0.9) + Math.sin(this.time * 2.5 + i) * 28;
+          const offset = Math.sin(this.time * 3 + i * 1.3) * 18;
+
+          ctx.fillStyle = i % 3 === 0
+            ? 'rgba(255, 190, 90, 0.22)'
+            : (i % 2 === 0 ? 'rgba(255, 42, 133, 0.18)' : 'rgba(0, 240, 255, 0.14)');
+          ctx.fillRect(sunX - waveWidth * 0.5 + offset, wy, waveWidth, 1.8 + t * 2.2);
+        }
+
+        // 6. Foreground Swaying Miami Palm Trees (Left & Right Framing)
+        const sway = Math.sin(this.time * 1.15);
+        const palmScale = Math.max(0.68, Math.min(1.25, w / 1150));
+        this.drawPalmTree(ctx, -10, h + 12, palmScale * 1.15, 1, sway);
+        this.drawPalmTree(ctx, w * 0.09, h + 25, palmScale * 0.85, 1, sway * 0.85);
+        this.drawPalmTree(ctx, w + 10, h + 12, palmScale * 1.15, -1, -sway);
+        this.drawPalmTree(ctx, w * 0.91, h + 25, palmScale * 0.85, -1, -sway * 0.85);
+
+        // 7. Floating Warm Neon Particles
+        this.particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.y < -10) {
+            p.y = h + 10;
+            p.x = Math.random() * w;
+          }
+          if (p.x < -10) p.x = w + 10;
+          if (p.x > w + 10) p.x = -10;
+
+          ctx.fillStyle = p.isPrimary ? c.primary : c.secondary;
+          ctx.globalAlpha = p.alpha * (0.6 + 0.4 * Math.sin(this.time * 3 + p.x));
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 8. Cold Ruteng Highland Mist & Drifting Frost Particles
+        const mistGrad = ctx.createLinearGradient(0, horizonY - h * 0.14, 0, h);
+        mistGrad.addColorStop(0, 'rgba(186, 230, 253, 0)');
+        mistGrad.addColorStop(0.55, 'rgba(165, 243, 252, 0.085)');
+        mistGrad.addColorStop(1, 'rgba(224, 242, 254, 0.14)');
+        ctx.fillStyle = mistGrad;
+        ctx.fillRect(0, horizonY - h * 0.14, w, h - (horizonY - h * 0.14));
+
+        this.frostMotes.forEach(f => {
+          f.x += f.vx + Math.sin(this.time * 1.4 + f.phase) * 0.28;
+          f.y += f.vy;
+          if (f.y > h + 12) {
+            f.y = -12;
+            f.x = Math.random() * w;
+          }
+          if (f.x < -12) f.x = w + 12;
+          if (f.x > w + 12) f.x = -12;
+
+          const shimmer = 0.55 + 0.45 * Math.sin(this.time * 2.6 + f.phase);
+          ctx.fillStyle = `rgba(224, 242, 254, ${f.alpha * shimmer})`;
+          ctx.shadowColor = 'rgba(125, 211, 252, 0.75)';
+          ctx.shadowBlur = 7;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+
+        requestAnimationFrame((ts) => this.render(ts));
+      }
+    }
+
+    /* ==========================================================================
+       4. NEON CONFETTI ENGINE (VICTORY CELEBRATION)
+       ========================================================================== */
+    class ConfettiEngine {
+      constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.pieces = [];
+        this.running = false;
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+      }
+
+      resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+      }
+
+      burst(colors = ['#ff2a85', '#00f0ff', '#ffbe0b', '#ffffff']) {
+        this.pieces = Array.from({ length: 130 }, () => ({
+          x: this.canvas.width * 0.5 + (Math.random() - 0.5) * 160,
+          y: this.canvas.height * 0.45,
+          vx: (Math.random() - 0.5) * 16,
+          vy: -6 - Math.random() * 13,
+          w: 6 + Math.random() * 7,
+          h: 10 + Math.random() * 10,
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 0.25,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1
+        }));
+
+        if (!this.running) {
+          this.running = true;
+          this.loop();
+        }
+      }
+
+      clear() {
+        this.pieces = [];
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      }
+
+      loop() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.pieces.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.34; // Gravity
+          p.vx *= 0.985;
+          p.rot += p.vRot;
+          if (p.y > this.canvas.height * 0.82) {
+            p.alpha -= 0.025;
+          }
+
+          if (p.alpha > 0) {
+            this.ctx.save();
+            this.ctx.translate(p.x, p.y);
+            this.ctx.rotate(p.rot);
+            this.ctx.globalAlpha = Math.max(0, p.alpha);
+            this.ctx.fillStyle = p.color;
+            this.ctx.shadowColor = p.color;
+            this.ctx.shadowBlur = 10;
+            this.ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            this.ctx.restore();
+          }
+        });
+
+        this.pieces = this.pieces.filter(p => p.alpha > 0 && p.y < this.canvas.height + 40);
+
+        if (this.pieces.length > 0) {
+          requestAnimationFrame(() => this.loop());
+        } else {
+          this.running = false;
+        }
+      }
+    }
+
+    /* ==========================================================================
+       5. ARTIFICIAL INTELLIGENCE (EASY, MEDIUM, UNBEATABLE MINIMAX HARD)
+       ========================================================================== */
+    const WIN_PATTERNS = [
+      { combo: [0, 1, 2], coords: [20, 50, 280, 50] },
+      { combo: [3, 4, 5], coords: [20, 150, 280, 150] },
+      { combo: [6, 7, 8], coords: [20, 250, 280, 250] },
+      { combo: [0, 3, 6], coords: [50, 20, 50, 280] },
+      { combo: [1, 4, 7], coords: [150, 20, 150, 280] },
+      { combo: [2, 5, 8], coords: [250, 20, 250, 280] },
+      { combo: [0, 4, 8], coords: [25, 25, 275, 275] },
+      { combo: [2, 4, 6], coords: [275, 25, 25, 275] }
+    ];
+
+    class ViceAI {
+      static getAvailableMoves(board) {
+        const moves = [];
+        for (let i = 0; i < 9; i++) {
+          if (board[i] === null) moves.push(i);
+        }
+        return moves;
+      }
+
+      static evaluateWinner(board) {
+        for (const pattern of WIN_PATTERNS) {
+          const [a, b, c] = pattern.combo;
+          if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            return board[a];
+          }
+        }
+        return null;
+      }
+
+      static findImmediateWinOrBlock(board, symbol) {
+        const available = this.getAvailableMoves(board);
+        for (const idx of available) {
+          board[idx] = symbol;
+          const won = this.evaluateWinner(board) === symbol;
+          board[idx] = null;
+          if (won) return idx;
+        }
+        return -1;
+      }
+
+      static minimax(board, depth, isMaximizing, alpha, beta) {
+        const winner = this.evaluateWinner(board);
+        if (winner === 'O') return 10 - depth;
+        if (winner === 'X') return depth - 10;
+        const available = this.getAvailableMoves(board);
+        if (available.length === 0) return 0;
+
+        if (isMaximizing) {
+          let maxEval = -Infinity;
+          for (const idx of available) {
+            board[idx] = 'O';
+            const score = this.minimax(board, depth + 1, false, alpha, beta);
+            board[idx] = null;
+            maxEval = Math.max(maxEval, score);
+            alpha = Math.max(alpha, score);
+            if (beta <= alpha) break;
+          }
+          return maxEval;
+        } else {
+          let minEval = Infinity;
+          for (const idx of available) {
+            board[idx] = 'X';
+            const score = this.minimax(board, depth + 1, true, alpha, beta);
+            board[idx] = null;
+            minEval = Math.min(minEval, score);
+            beta = Math.min(beta, score);
+            if (beta <= alpha) break;
+          }
+          return minEval;
+        }
+      }
+
+      static chooseMove(board, difficulty) {
+        const available = this.getAvailableMoves(board);
+        if (available.length === 0) return -1;
+
+        // EASY: Purely casual random moves
+        if (difficulty === 'easy') {
+          return available[Math.floor(Math.random() * available.length)];
+        }
+
+        // MEDIUM: Win if possible, block X if threatened, take center, else smart random
+        if (difficulty === 'medium') {
+          const winMove = this.findImmediateWinOrBlock(board, 'O');
+          if (winMove !== -1) return winMove;
+
+          if (Math.random() < 0.78) {
+            const blockMove = this.findImmediateWinOrBlock(board, 'X');
+            if (blockMove !== -1) return blockMove;
+          }
+
+          if (board[4] === null && Math.random() < 0.75) return 4;
+          return available[Math.floor(Math.random() * available.length)];
+        }
+
+        // HARD: Unbeatable Minimax with Alpha-Beta Pruning
+        // Slight opening variety on empty/first move while remaining mathematically optimal
+        if (available.length === 9) {
+          const bestOpeners = [0, 2, 4, 6, 8];
+          return bestOpeners[Math.floor(Math.random() * bestOpeners.length)];
+        }
+
+        let bestScore = -Infinity;
+        let bestMoves = [];
+
+        for (const idx of available) {
+          board[idx] = 'O';
+          const score = this.minimax(board, 0, false, -Infinity, Infinity);
+          board[idx] = null;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestMoves = [idx];
+          } else if (score === bestScore) {
+            bestMoves.push(idx);
+          }
+        }
+
+        return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+      }
+    }
+
+    /* ==========================================================================
+       5B. REAL-TIME ONLINE MULTIPLAYER MANAGER (PeerJS + BroadcastChannel Fallback)
+       ========================================================================== */
+    class OnlineMultiplayerManager {
+      constructor(onMessage, onStatusChange) {
+        this.onMessage = onMessage;
+        this.onStatusChange = onStatusChange;
+
+        this.peer = null;
+        this.conn = null;
+        this.channel = null;
+        this.roomCode = '';
+        this.role = null; // 'host' (plays X) or 'guest' (plays O)
+        this.connected = false;
+        this.peerPrefix = 'VICETTT_';
+
+        if ('BroadcastChannel' in window) {
+          this.channel = new BroadcastChannel('vice_ttt_p2p_bridge');
+          this.channel.onmessage = (ev) => {
+            const payload = ev.data;
+            if (!payload || payload.roomCode !== this.roomCode) return;
+            if (payload.senderId === this.clientId) return;
+
+            // Host listens for guest join; guest listens for host welcome
+            if (payload.type === '__GUEST_HELLO__' && this.role === 'host') {
+              this.connected = true;
+              this.sendViaChannel({ type: '__HOST_ACK__' });
+              this.onStatusChange('TERHUBUNG', 'Teman su masuk lewat jalur lokal/tab!');
+              this.onMessage({ type: 'PEER_CONNECTED' });
+            } else if (payload.type === '__HOST_ACK__' && this.role === 'guest') {
+              this.connected = true;
+              this.onStatusChange('TERHUBUNG', 'Su tersambung deng room host!');
+              this.onMessage({ type: 'PEER_CONNECTED' });
+            } else if (payload.type === '__PEER_LEAVE__') {
+              if (this.connected) {
+                this.connected = false;
+                this.onStatusChange('LAWAN KELUAR', 'Teman lawan su keluar dari room.');
+                this.onMessage({ type: 'PEER_DISCONNECTED' });
+              }
+            } else if (this.connected) {
+              this.onMessage(payload.data);
+            }
+          };
+        }
+
+        this.clientId = 'CL_' + Math.random().toString(36).substring(2, 9).toUpperCase();
+      }
+
+      generateRoomCode() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = '';
+        for (let i = 0; i < 6; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+      }
+
+      sendViaChannel(envelope) {
+        if (this.channel) {
+          this.channel.postMessage({
+            ...envelope,
+            roomCode: this.roomCode,
+            senderId: this.clientId
+          });
+        }
+      }
+
+      createRoom() {
+        this.disconnect(true);
+        const code = this.generateRoomCode();
+        this.roomCode = code;
+        this.role = 'host';
+        this.connected = false;
+
+        this.onStatusChange('MENYAMBUNG...', `Lagi bikin room ${code}...`);
+
+        if (typeof Peer === 'undefined') {
+          // Fallback to BroadcastChannel if PeerJS CDN is blocked
+          this.onStatusChange('TUNGGU PEMAIN 2...', `Room ${code} su siap (sinkron tab/lokal aktif).`);
+          return code;
+        }
+
+        try {
+          this.peer = new Peer(this.peerPrefix + code, {
+            debug: 0
+          });
+
+          this.peer.on('open', () => {
+            if (!this.connected) {
+              this.onStatusChange('TUNGGU PEMAIN 2...', `Kirim kode ${code} pi lu pung teman.`);
+            }
+          });
+
+          this.peer.on('connection', (incomingConn) => {
+            this.conn = incomingConn;
+            this.setupDataConnection(this.conn);
+          });
+
+          this.peer.on('error', (err) => {
+            if (err && err.type === 'unavailable-id') {
+              // Retry once with a fresh room code if collision occurs
+              const retryCode = this.generateRoomCode();
+              this.roomCode = retryCode;
+              this.onMessage({ type: 'ROOM_CODE_UPDATED', code: retryCode });
+              this.peer.destroy();
+              this.peer = new Peer(this.peerPrefix + retryCode, { debug: 0 });
+              this.peer.on('connection', (c) => {
+                this.conn = c;
+                this.setupDataConnection(this.conn);
+              });
+            } else {
+              this.onStatusChange('GANGGUAN', 'Jaringan PeerJS bermasalah; sinkron tab/lokal masih jalan.');
+            }
+          });
+        } catch (e) {
+          this.onStatusChange('TUNGGU PEMAIN 2...', `Room ${code} su siap.`);
+        }
+
+        return code;
+      }
+
+      joinRoom(rawCode) {
+        const code = (rawCode || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (code.length < 4) {
+          this.onStatusChange('GANGGUAN', 'Kasi masuk kode room 4–6 huruf dulu.');
+          return false;
+        }
+
+        this.disconnect(true);
+        this.roomCode = code;
+        this.role = 'guest';
+        this.connected = false;
+
+        this.onStatusChange('MENYAMBUNG...', `Lagi sambung ka room ${code}...`);
+
+        // Also announce on BroadcastChannel for instant same-browser/multi-tab testing
+        this.sendViaChannel({ type: '__GUEST_HELLO__' });
+
+        if (typeof Peer === 'undefined') {
+          this.onStatusChange('TERHUBUNG', `Su masuk room ${code} lewat sinkron tab.`);
+          this.onMessage({ type: 'PEER_CONNECTED' });
+          return true;
+        }
+
+        try {
+          this.peer = new Peer(undefined, { debug: 0 });
+
+          this.peer.on('open', () => {
+            if (this.connected) return;
+            const outgoing = this.peer.connect(this.peerPrefix + code, { reliable: true });
+            this.conn = outgoing;
+            this.setupDataConnection(this.conn);
+          });
+
+          this.peer.on('error', (err) => {
+            if (!this.connected) {
+              const msg = err && err.type === 'peer-unavailable'
+                ? `Room ${code} sonde ada atau host off.`
+                : 'Sonde bisa sambung. Cek ulang kode room lalu coba lai.';
+              this.onStatusChange('GANGGUAN', msg);
+            }
+          });
+        } catch (e) {
+          this.onStatusChange('GANGGUAN', 'Sonde bisa mulai koneksi online.');
+        }
+
+        return true;
+      }
+
+      setupDataConnection(conn) {
+        conn.on('open', () => {
+          this.connected = true;
+          this.onStatusChange('TERHUBUNG', 'Koneksi dua HP su nyambung!');
+          this.onMessage({ type: 'PEER_CONNECTED' });
+        });
+
+        conn.on('data', (data) => {
+          if (data) {
+            this.onMessage(data);
+          }
+        });
+
+        conn.on('close', () => {
+          if (this.connected) {
+            this.connected = false;
+            this.onStatusChange('LAWAN KELUAR', 'Teman lawan su putus koneksi.');
+            this.onMessage({ type: 'PEER_DISCONNECTED' });
+          }
+        });
+
+        conn.on('error', () => {
+          if (this.connected) {
+            this.connected = false;
+            this.onStatusChange('LAWAN KELUAR', 'Koneksi deng lawan taputus.');
+            this.onMessage({ type: 'PEER_DISCONNECTED' });
+          }
+        });
+      }
+
+      send(data) {
+        if (this.conn && this.conn.open) {
+          try {
+            this.conn.send(data);
+          } catch (e) {
+            // Fallback to channel
+          }
+        }
+        this.sendViaChannel({ type: '__GAME_MSG__', data });
+      }
+
+      disconnect(silent = false) {
+        if (this.connected && !silent) {
+          this.sendViaChannel({ type: '__PEER_LEAVE__' });
+        }
+        this.connected = false;
+        if (this.conn) {
+          try { this.conn.close(); } catch (e) {}
+          this.conn = null;
+        }
+        if (this.peer) {
+          try { this.peer.destroy(); } catch (e) {}
+          this.peer = null;
+        }
+        if (!silent) {
+          this.roomCode = '';
+          this.role = null;
+          this.onStatusChange('SIAP', 'Su keluar dari room lawan teman.');
+        }
+      }
+    }
+
+    /* ==========================================================================
+       6. MAIN GAME CONTROLLER & UI ORCHESTRATION
+       ========================================================================== */
+    class TicTacToeGame {
+      constructor() {
+        this.save = loadSaveData();
+        this.audio = new SynthAudioEngine(this.save.volume, this.save.muted, this.save.bgmEnabled);
+        this.backdrop = new ViceBackdropRenderer(document.getElementById('vice-bg-canvas'));
+        this.confetti = new ConfettiEngine(document.getElementById('confetti-canvas'));
+
+        this.board = Array(9).fill(null);
+        this.currentTurn = 'X';
+        this.startingPlayer = 'X';
+        this.gameActive = false;
+        this.aiThinking = false;
+        this.aiTimer = null;
+
+        // Online multiplayer state
+        this.onlineOpponentName = 'LAWAN';
+        this.onlineStatusLabel = 'SIAP';
+        this.online = new OnlineMultiplayerManager(
+          (msg) => this.handleOnlineMessage(msg),
+          (status, detail) => this.handleOnlineStatusChange(status, detail)
+        );
+
+        this.sessionScores = { X: 0, O: 0, draw: 0 };
+
+        this.cacheDOM();
+        this.buildBoardCells();
+        this.applyTheme(this.save.theme, false);
+        this.syncControlsFromSave();
+        this.bindEvents();
+
+        // Start full-screen Vice City sunset animation on load
+        requestAnimationFrame((ts) => this.backdrop.render(ts));
+      }
+
+      cacheDOM() {
+        // Utility controls
+        this.themeBtns = document.querySelectorAll('.theme-btn');
+        this.bgmBtn = document.getElementById('bgm-toggle-btn');
+        this.fullscreenBtn = document.getElementById('fullscreen-toggle-btn');
+        this.muteBtn = document.getElementById('mute-toggle-btn');
+        this.volumeSlider = document.getElementById('volume-slider');
+
+        // Screens
+        this.landingScreen = document.getElementById('landing-screen');
+        this.gameScreen = document.getElementById('game-screen');
+
+        // Landing config
+        this.modeBtns = document.querySelectorAll('#mode-selector .seg-btn');
+        this.diffContainer = document.getElementById('difficulty-container');
+        this.diffBtns = document.querySelectorAll('#difficulty-selector .seg-btn');
+        this.inputX = document.getElementById('player-x-input');
+        this.inputO = document.getElementById('player-o-input');
+        this.playNowBtn = document.getElementById('play-now-btn');
+        this.resetStatsBtn = document.getElementById('reset-stats-btn');
+
+        // Online Lobby DOM
+        this.onlineLobbyBox = document.getElementById('online-lobby-box');
+        this.lobbyConnBadge = document.getElementById('lobby-conn-badge');
+        this.lobbyConnText = document.getElementById('lobby-conn-text');
+        this.createRoomBtn = document.getElementById('create-room-btn');
+        this.disconnectRoomBtn = document.getElementById('disconnect-room-btn');
+        this.roomCodePanel = document.getElementById('room-code-panel');
+        this.createdRoomCodeEl = document.getElementById('created-room-code');
+        this.copyRoomBtn = document.getElementById('copy-room-btn');
+        this.joinRoomInput = document.getElementById('join-room-input');
+        this.joinRoomBtn = document.getElementById('join-room-btn');
+        this.onlineStatusMsg = document.getElementById('online-status-msg');
+
+        // Career Stats
+        this.statWinsEl = document.getElementById('stat-wins');
+        this.statDrawsEl = document.getElementById('stat-draws');
+        this.statLossesEl = document.getElementById('stat-losses');
+
+        // Arena HUD
+        this.arenaOnlineBar = document.getElementById('arena-online-bar');
+        this.arenaConnBadge = document.getElementById('arena-conn-badge');
+        this.arenaConnText = document.getElementById('arena-conn-text');
+        this.arenaRoleLabel = document.getElementById('arena-role-label');
+        this.arenaRoomTag = document.getElementById('arena-room-tag');
+
+        this.cardX = document.getElementById('card-x');
+        this.cardO = document.getElementById('card-o');
+        this.hudNameX = document.getElementById('hud-name-x');
+        this.hudNameO = document.getElementById('hud-name-o');
+        this.hudModeBadge = document.getElementById('hud-mode-badge');
+        this.sessionScoreXEl = document.getElementById('session-score-x');
+        this.sessionScoreOEl = document.getElementById('session-score-o');
+        this.sessionScoreDrawEl = document.getElementById('session-score-draw');
+        this.turnPill = document.getElementById('turn-pill');
+        this.turnText = document.getElementById('turn-text');
+        this.hypeBanner = document.getElementById('hype-banner');
+
+        // Board & Overlay
+        this.boardGrid = document.getElementById('board-grid');
+        this.winStrikeLine = document.getElementById('win-strike-line');
+        this.backMenuBtn = document.getElementById('back-menu-btn');
+        this.backMenuLabel = document.getElementById('back-menu-label');
+        this.restartGameBtn = document.getElementById('restart-game-btn');
+        this.restartBtnLabel = document.getElementById('restart-btn-label');
+
+        this.resultOverlay = document.getElementById('result-overlay');
+        this.resultKicker = document.getElementById('result-kicker');
+        this.resultHeadline = document.getElementById('result-headline');
+        this.resultSubtext = document.getElementById('result-subtext');
+        this.modalPlayAgainBtn = document.getElementById('modal-play-again-btn');
+        this.modalMenuBtn = document.getElementById('modal-menu-btn');
+        this.openingSplash = document.getElementById('opening-splash');
+      }
+
+      initOpeningSplash() {
+        if (!this.openingSplash) return;
+        let dismissed = false;
+
+        const dismissOpening = () => {
+          if (dismissed) return;
+          dismissed = true;
+          if (this.openingTimer) {
+            clearTimeout(this.openingTimer);
+            this.openingTimer = null;
+          }
+          this.openingSplash.classList.add('hide');
+          this.landingScreen.classList.remove('entering');
+          void this.landingScreen.offsetWidth;
+          this.landingScreen.classList.add('entering');
+        };
+
+        this.openingSplash.addEventListener('click', () => {
+          this.audio.init();
+          this.audio.playClick();
+          dismissOpening();
+        });
+
+        this.openingSplash.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            this.audio.init();
+            this.audio.playClick();
+            dismissOpening();
+          }
+        });
+
+        this.openingTimer = setTimeout(dismissOpening, 2400);
+      }
+
+      buildBoardCells() {
+        this.boardGrid.innerHTML = '';
+        this.cells = [];
+        for (let i = 0; i < 9; i++) {
+          const cell = document.createElement('button');
+          cell.type = 'button';
+          cell.className = 'cell';
+          cell.dataset.index = i;
+          cell.setAttribute('aria-label', `Board square ${i + 1}`);
+          cell.innerHTML = this.getGhostSVG('X');
+          cell.addEventListener('click', () => this.handleCellClick(i));
+          this.boardGrid.appendChild(cell);
+          this.cells.push(cell);
+        }
+      }
+
+      getGhostSVG(symbol) {
+        if (symbol === 'X') {
+          return `
+            <svg class="ghost-symbol" viewBox="0 0 100 100">
+              <line x1="22" y1="22" x2="78" y2="78" stroke="var(--primary)" stroke-width="10" stroke-linecap="round" />
+              <line x1="78" y1="22" x2="22" y2="78" stroke="var(--primary)" stroke-width="10" stroke-linecap="round" />
+            </svg>`;
+        }
+        return `
+          <svg class="ghost-symbol" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="32" stroke="var(--secondary)" stroke-width="10" fill="none" />
+          </svg>`;
+      }
+
+      getPlacedSVG(symbol) {
+        if (symbol === 'X') {
+          return `
+            <svg class="neon-symbol" viewBox="0 0 100 100">
+              <line class="neon-x-stroke line-1" x1="22" y1="22" x2="78" y2="78" />
+              <line class="neon-x-stroke line-2" x1="78" y1="22" x2="22" y2="78" />
+            </svg>`;
+        }
+        return `
+          <svg class="neon-symbol" viewBox="0 0 100 100">
+            <circle class="neon-o-stroke" cx="50" cy="50" r="32" />
+          </svg>`;
+      }
+
+      syncControlsFromSave() {
+        // Volume & Mute icon
+        this.volumeSlider.value = this.save.volume;
+        this.updateMuteIcon();
+        this.updateBgmButtonUI();
+        // Game Mode
+        this.modeBtns.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.mode === this.save.mode);
+        });
+        this.updateModeDependentUI();
+
+        // Difficulty
+        this.diffBtns.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.diff === this.save.difficulty);
+        });
+
+        // Player Names
+        this.inputX.value = this.save.playerX || 'JASON';
+        if (this.save.mode === 'pvai') {
+          this.inputO.value = `RUTENG AI (${this.save.difficulty.toUpperCase()})`;
+          this.inputO.disabled = true;
+        } else if (this.save.mode === 'online') {
+          this.inputO.value = this.online.connected ? this.onlineOpponentName : 'LAWAN ONLINE';
+          this.inputO.disabled = true;
+        } else {
+          this.inputO.value = this.save.playerO || 'LUCIA';
+          this.inputO.disabled = false;
+        }
+
+        // Career Stats
+        this.renderCareerStats();
+      }
+
+      updateModeDependentUI() {
+        const isAI = this.save.mode === 'pvai';
+        const isOnline = this.save.mode === 'online';
+
+        this.diffContainer.classList.toggle('disabled', !isAI);
+        this.onlineLobbyBox.classList.toggle('visible', isOnline);
+
+        if (!isOnline) {
+          this.online.disconnect(false);
+          this.roomCodePanel.classList.remove('active');
+          this.disconnectRoomBtn.disabled = true;
+        }
+
+        if (isAI) {
+          this.inputO.value = `RUTENG AI (${this.save.difficulty.toUpperCase()})`;
+          this.inputO.disabled = true;
+          this.playNowBtn.textContent = 'MAIN SU';
+        } else if (isOnline) {
+          this.inputO.value = this.online.connected ? this.onlineOpponentName : 'TUNGGU TEMAN...';
+          this.inputO.disabled = true;
+          this.playNowBtn.textContent = this.online.connected ? 'MASUK LAWAN TEMAN' : 'MAIN SU (LAWAN TEMAN)';
+        } else {
+          this.inputO.disabled = false;
+          if (this.inputO.value.startsWith('RUTENG AI') || this.inputO.value.startsWith('VICE AI') || this.inputO.value === 'TUNGGU TEMAN...' || this.inputO.value === 'LAWAN TEMAN') {
+            this.inputO.value = this.save.playerO || 'LUCIA';
+          }
+          this.playNowBtn.textContent = 'MAIN SU';
+        }
+      }
+
+      renderCareerStats() {
+        this.statWinsEl.textContent = this.save.stats.xWins;
+        this.statDrawsEl.textContent = this.save.stats.draws;
+        this.statLossesEl.textContent = this.save.stats.oWins;
+      }
+
+      applyTheme(themeName, playSound = true) {
+        this.save.theme = themeName;
+        document.documentElement.setAttribute('data-theme', themeName);
+        this.themeBtns.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.setTheme === themeName);
+        });
+        persistSaveData(this.save);
+        if (playSound) this.audio.playClick();
+      }
+
+      updateMuteIcon() {
+        const isMuted = this.save.muted || Number(this.save.volume) === 0;
+        this.muteBtn.innerHTML = isMuted
+          ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`
+          : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+      }
+
+      updateBgmButtonUI() {
+        if (!this.bgmBtn) return;
+        const active = Boolean(this.save.bgmEnabled && !this.save.muted);
+        this.bgmBtn.style.color = active ? 'var(--secondary)' : 'rgba(255, 255, 255, 0.45)';
+        this.bgmBtn.style.boxShadow = active ? '0 0 12px var(--secondary-glow)' : 'none';
+      }
+
+      bindEvents() {
+        // Oasis Backsound Toggle
+        if (this.bgmBtn) {
+          this.bgmBtn.addEventListener('click', () => {
+            this.audio.init();
+            this.save.bgmEnabled = !this.save.bgmEnabled;
+            this.audio.setBgmEnabled(this.save.bgmEnabled);
+            this.updateBgmButtonUI();
+            persistSaveData(this.save);
+            if (this.save.bgmEnabled && !this.save.muted) {
+              this.audio.playClick();
+            }
+          });
+        }
+
+        // Fullscreen Toggle for Mobile / Desktop
+        if (this.fullscreenBtn) {
+          this.fullscreenBtn.addEventListener('click', () => {
+            this.audio.init();
+            this.audio.playClick();
+            this.toggleFullscreenMode();
+          });
+        }
+
+        // Auto-hide mobile address bar on first touch/scroll when not in native fullscreen
+        window.addEventListener('touchstart', () => {
+          if (!document.fullscreenElement && window.innerWidth <= 820) {
+            setTimeout(() => {
+              window.scrollTo(0, 1);
+            }, 60);
+          }
+        }, { passive: true });
+
+        // Theme Switcher
+        this.themeBtns.forEach(btn => {
+          btn.addEventListener('click', () => this.applyTheme(btn.dataset.setTheme, true));
+        });
+
+        // Mute Toggle
+        this.muteBtn.addEventListener('click', () => {
+          this.save.muted = !this.save.muted;
+          this.audio.setMuted(this.save.muted);
+          this.updateMuteIcon();
+          this.updateBgmButtonUI();
+          persistSaveData(this.save);
+          if (!this.save.muted) this.audio.playClick();
+        });
+
+        this.volumeSlider.addEventListener('input', (e) => {
+          const val = Number(e.target.value);
+          this.save.volume = val;
+          if (val > 0 && this.save.muted) {
+            this.save.muted = false;
+            this.audio.setMuted(false);
+          }
+          this.audio.setVolume(val);
+          this.updateMuteIcon();
+          this.updateBgmButtonUI();
+          persistSaveData(this.save);
+        });
+
+        // Mode Selection
+        this.modeBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            this.save.mode = btn.dataset.mode;
+            this.modeBtns.forEach(b => b.classList.toggle('active', b === btn));
+            this.updateModeDependentUI();
+            persistSaveData(this.save);
+            this.audio.playClick();
+          });
+        });
+
+        // Online Room Controls
+        this.createRoomBtn.addEventListener('click', () => {
+          this.audio.playClick();
+          const code = this.online.createRoom();
+          this.createdRoomCodeEl.textContent = code;
+          this.roomCodePanel.classList.add('active');
+          this.disconnectRoomBtn.disabled = false;
+        });
+
+        this.copyRoomBtn.addEventListener('click', () => {
+          const code = this.createdRoomCodeEl.textContent.trim();
+          if (!code || code === '------') return;
+          const tempInput = document.createElement('input');
+          tempInput.value = code;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          try {
+            document.execCommand('copy');
+            this.copyRoomBtn.textContent = 'SU DISALIN!';
+          } catch (e) {
+            this.copyRoomBtn.textContent = 'GAGAL';
+          }
+          document.body.removeChild(tempInput);
+          this.audio.playClick();
+          setTimeout(() => {
+            this.copyRoomBtn.textContent = 'SALIN KODE';
+          }, 1500);
+        });
+
+        this.joinRoomBtn.addEventListener('click', () => {
+          this.audio.playClick();
+          const code = this.joinRoomInput.value;
+          const ok = this.online.joinRoom(code);
+          if (ok) {
+            this.disconnectRoomBtn.disabled = false;
+          }
+        });
+
+        this.joinRoomInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            this.joinRoomBtn.click();
+          }
+        });
+
+        this.disconnectRoomBtn.addEventListener('click', () => {
+          this.audio.playClick();
+          this.online.disconnect(false);
+          this.roomCodePanel.classList.remove('active');
+          this.disconnectRoomBtn.disabled = true;
+          this.updateModeDependentUI();
+        });
+
+        // Name Inputs
+        this.inputX.addEventListener('input', () => {
+          this.save.playerX = this.inputX.value.trim().toUpperCase() || 'JASON';
+          persistSaveData(this.save);
+        });
+
+        this.inputO.addEventListener('input', () => {
+          if (this.save.mode === 'pvp') {
+            this.save.playerO = this.inputO.value.trim().toUpperCase() || 'LUCIA';
+            persistSaveData(this.save);
+          }
+        });
+
+        // Reset Career Stats
+        this.resetStatsBtn.addEventListener('click', () => {
+          this.save.stats = { xWins: 0, oWins: 0, draws: 0 };
+          persistSaveData(this.save);
+          this.renderCareerStats();
+          this.audio.playClick();
+        });
+
+        // Start Match
+        this.playNowBtn.addEventListener('click', () => {
+          this.requestMobileFullscreenIfNeeded();
+          this.audio.startOasisBacksound();
+          if (this.save.mode === 'online') {
+            if (!this.online.roomCode) {
+              this.onlineStatusMsg.textContent = 'Bikin room dulu atau masuk kode room teman baru bisa main!';
+              this.audio.playDraw();
+              return;
+            }
+            if (!this.online.connected) {
+              this.onlineStatusMsg.textContent = 'Tunggu teman tersambung dulu baru katong mulai...';
+              this.audio.playDraw();
+              return;
+            }
+            this.online.send({
+              type: 'START_MATCH',
+              name: this.getLocalPlayerName(),
+              startingPlayer: 'X'
+            });
+          }
+
+          this.audio.playStart();
+          this.sessionScores = { X: 0, O: 0, draw: 0 };
+          this.startingPlayer = 'X';
+          this.switchScreen('game');
+          this.startNewRound();
+        });
+
+        // Arena Actions
+        this.restartGameBtn.addEventListener('click', () => {
+          this.audio.playClick();
+          if (this.save.mode === 'online') {
+            const nextStarter = this.startingPlayer === 'X' ? 'O' : 'X';
+            this.startingPlayer = nextStarter;
+            this.online.send({
+              type: 'NEW_ROUND',
+              startingPlayer: nextStarter
+            });
+          }
+          this.startNewRound();
+        });
+
+        this.backMenuBtn.addEventListener('click', () => {
+          this.audio.playClick();
+          this.leaveToMenu();
+        });
+
+        // Modal Buttons
+        this.modalPlayAgainBtn.addEventListener('click', () => {
+          this.audio.playClick();
+          this.resultOverlay.classList.remove('visible');
+          if (this.save.mode === 'online') {
+            const nextStarter = this.startingPlayer === 'X' ? 'O' : 'X';
+            this.startingPlayer = nextStarter;
+            this.online.send({
+              type: 'NEW_ROUND',
+              startingPlayer: nextStarter
+            });
+            this.startNewRound();
+          } else {
+            if (this.save.mode === 'pvp') {
+              this.startingPlayer = this.startingPlayer === 'X' ? 'O' : 'X';
+            } else {
+              this.startingPlayer = 'X';
+            }
+            this.startNewRound();
+          }
+        });
+
+        this.modalMenuBtn.addEventListener('click', () => {
+          this.audio.playClick();
+          this.resultOverlay.classList.remove('visible');
+          this.leaveToMenu();
+        });
+      }
+
+      leaveToMenu() {
+        this.clearPendingAI();
+        this.confetti.clear();
+        this.resultOverlay.classList.remove('visible');
+        if (this.save.mode === 'online') {
+          this.online.disconnect(false);
+          this.roomCodePanel.classList.remove('active');
+          this.disconnectRoomBtn.disabled = true;
+          this.updateModeDependentUI();
+        }
+        this.renderCareerStats();
+        this.switchScreen('landing');
+      }
+
+      getLocalPlayerName() {
+        return (this.inputX.value.trim() || 'JASON').toUpperCase();
+      }
+
+      getLocalOnlineSymbol() {
+        return this.online.role === 'host' ? 'X' : 'O';
+      }
+
+      requestMobileFullscreenIfNeeded() {
+        if (window.innerWidth <= 820) {
+          document.body.classList.add('mobile-fullscreen-mode');
+          setTimeout(() => window.scrollTo(0, 1), 80);
+        }
+      }
+
+      toggleFullscreenMode() {
+        const docEl = document.documentElement;
+        const isCurrentlyFull = Boolean(
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.body.classList.contains('mobile-fullscreen-mode')
+        );
+
+        if (!isCurrentlyFull) {
+          document.body.classList.add('mobile-fullscreen-mode');
+          const reqFs = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+          if (reqFs) {
+            try {
+              const promise = reqFs.call(docEl);
+              if (promise && typeof promise.catch === 'function') {
+                promise.catch(() => {});
+              }
+            } catch (e) {
+              // Fallback to viewport-locked full-screen CSS mode
+            }
+          }
+          setTimeout(() => window.scrollTo(0, 1), 80);
+        } else {
+          document.body.classList.remove('mobile-fullscreen-mode');
+          const exitFs = document.exitFullscreen || document.webkitExitFullscreen;
+          if (exitFs && (document.fullscreenElement || document.webkitFullscreenElement)) {
+            try {
+              const promise = exitFs.call(document);
+              if (promise && typeof promise.catch === 'function') {
+                promise.catch(() => {});
+              }
+            } catch (e) {
+              // Ignore exit errors
+            }
+          }
+        }
+      }
+
+      handleOnlineStatusChange(status, detail) {
+        this.onlineStatusLabel = status;
+        this.onlineStatusMsg.textContent = detail || status;
+
+        const badgeClasses = ['conn-status-badge'];
+        if (status === 'TERHUBUNG') badgeClasses.push('status-connected');
+        else if (status === 'MENYAMBUNG...') badgeClasses.push('status-connecting');
+        else if (status === 'GANGGUAN' || status === 'LAWAN KELUAR') badgeClasses.push('status-error');
+
+        this.lobbyConnBadge.className = badgeClasses.join(' ');
+        this.lobbyConnText.textContent = status;
+
+        this.arenaConnBadge.className = badgeClasses.join(' ');
+        this.arenaConnText.textContent = status;
+
+        if (this.save.mode === 'online' && this.online.connected) {
+          this.inputO.value = this.onlineOpponentName;
+        }
+
+        if (this.gameScreen.classList.contains('active')) {
+          this.updateArenaOnlineBar();
+          this.updateTurnIndicator();
+        }
+      }
+
+      handleOnlineMessage(msg) {
+        if (!msg || typeof msg !== 'object') return;
+
+        if (msg.type === 'ROOM_CODE_UPDATED') {
+          this.createdRoomCodeEl.textContent = msg.code;
+          this.onlineStatusMsg.textContent = `Kirim kode ${msg.code} pi lu pung teman.`;
+          return;
+        }
+
+        if (msg.type === 'PEER_CONNECTED') {
+          this.disconnectRoomBtn.disabled = false;
+          // Exchange player names immediately
+          this.online.send({
+            type: 'HELLO_NAME',
+            name: this.getLocalPlayerName()
+          });
+          return;
+        }
+
+        if (msg.type === 'HELLO_NAME') {
+          this.onlineOpponentName = (msg.name || 'LAWAN').toUpperCase();
+          this.inputO.value = this.onlineOpponentName;
+          this.hudNameX.textContent = this.getPlayerName('X');
+          this.hudNameO.textContent = this.getPlayerName('O');
+          this.updateTurnIndicator();
+          return;
+        }
+
+        if (msg.type === 'START_MATCH') {
+          this.audio.playStart();
+          this.sessionScores = { X: 0, O: 0, draw: 0 };
+          this.startingPlayer = msg.startingPlayer || 'X';
+          this.switchScreen('game');
+          this.startNewRound();
+          return;
+        }
+
+        if (msg.type === 'MOVE') {
+          if (this.gameActive && typeof msg.index === 'number' && this.board[msg.index] === null) {
+            this.executeMove(msg.index, msg.symbol, true);
+          }
+          return;
+        }
+
+        if (msg.type === 'NEW_ROUND') {
+          this.audio.playClick();
+          this.startingPlayer = msg.startingPlayer || 'X';
+          this.startNewRound();
+          return;
+        }
+
+        if (msg.type === 'PEER_DISCONNECTED') {
+          this.gameActive = false;
+          this.cells.forEach(c => c.classList.add('locked'));
+          this.turnText.textContent = 'TEMAN LAWAN SU KELUAR';
+          this.audio.playDefeat();
+        }
+      }
+
+      updateArenaOnlineBar() {
+        const isOnline = this.save.mode === 'online';
+        this.arenaOnlineBar.classList.toggle('visible', isOnline);
+        if (!isOnline) return;
+
+        const mySym = this.getLocalOnlineSymbol();
+        this.arenaRoleLabel.textContent = `BETA PEGANG: ${mySym}`;
+        this.arenaRoomTag.textContent = `ROOM: ${this.online.roomCode || '------'}`;
+        this.backMenuLabel.textContent = 'KELUAR ROOM';
+        this.restartBtnLabel.textContent = 'MAIN LAGU SU';
+      }
+
+      switchScreen(target) {
+        if (target === 'game') {
+          this.landingScreen.classList.remove('active', 'entering');
+          this.gameScreen.classList.add('active', 'entering');
+        } else {
+          this.gameScreen.classList.remove('active', 'entering');
+          this.landingScreen.classList.add('active', 'entering');
+        }
+      }
+
+      getPlayerName(symbol) {
+        if (this.save.mode === 'online') {
+          const mySym = this.getLocalOnlineSymbol();
+          if (symbol === mySym) return this.getLocalPlayerName();
+          return this.onlineOpponentName || 'OPPONENT';
+        }
+        if (symbol === 'X') {
+          return (this.inputX.value.trim() || 'JASON').toUpperCase();
+        }
+        if (this.save.mode === 'pvai') {
+          return 'RUTENG AI';
+        }
+        return (this.inputO.value.trim() || 'LUCIA').toUpperCase();
+      }
+
+      clearPendingAI() {
+        if (this.aiTimer) {
+          clearTimeout(this.aiTimer);
+          this.aiTimer = null;
+        }
+        this.aiThinking = false;
+      }
+
+      startNewRound() {
+        this.clearPendingAI();
+        this.confetti.clear();
+        this.resultOverlay.classList.remove('visible');
+
+        this.board = Array(9).fill(null);
+        this.currentTurn = this.startingPlayer;
+        this.gameActive = true;
+        this.showEncouragement('Udara Ruteng dingin, tapi mental musti tetap panas! Gas su!');
+
+        this.backMenuLabel.textContent = 'MENU';
+        this.restartBtnLabel.textContent = 'MAIN LAGI SU';
+        this.updateArenaOnlineBar();
+
+        // Update HUD names & scores
+        this.hudNameX.textContent = this.getPlayerName('X');
+        this.hudNameO.textContent = this.getPlayerName('O');
+
+        if (this.save.mode === 'pvai') {
+          this.hudModeBadge.textContent = `AI • ${this.save.difficulty.toUpperCase()}`;
+        } else if (this.save.mode === 'online') {
+          this.hudModeBadge.textContent = 'LAWAN TEMAN';
+        } else {
+          this.hudModeBadge.textContent = '1V1 LOKAL';
+        }
+
+        this.updateSessionScoreUI();
+
+        // Reset Win Line
+        this.winStrikeLine.classList.remove('show', 'x-win', 'o-win');
+
+        // Reset Cells
+        this.cells.forEach(cell => {
+          cell.className = 'cell';
+          cell.innerHTML = this.getGhostSVG(this.currentTurn);
+        });
+
+        this.updateTurnIndicator();
+      }
+
+      updateSessionScoreUI() {
+        this.sessionScoreXEl.textContent = this.sessionScores.X;
+        this.sessionScoreOEl.textContent = this.sessionScores.O;
+        this.sessionScoreDrawEl.textContent = this.sessionScores.draw;
+      }
+
+      updateTurnIndicator() {
+        const isX = this.currentTurn === 'X';
+        this.cardX.classList.toggle('active-turn', isX);
+        this.cardO.classList.toggle('active-turn', !isX);
+
+        this.turnPill.classList.toggle('x-turn', isX);
+        this.turnPill.classList.toggle('o-turn', !isX);
+
+        this.boardGrid.classList.toggle('turn-x', isX);
+        this.boardGrid.classList.toggle('turn-o', !isX);
+
+        const isOnline = this.save.mode === 'online';
+        const mySym = isOnline ? this.getLocalOnlineSymbol() : null;
+        const isMyOnlineTurn = isOnline && this.online.connected && this.currentTurn === mySym;
+        const shouldLockInput = this.aiThinking || (isOnline && (!this.online.connected || !isMyOnlineTurn));
+
+        // Update ghost symbol on untaken cells
+        this.cells.forEach((cell, idx) => {
+          if (this.board[idx] === null) {
+            cell.innerHTML = this.getGhostSVG(this.currentTurn);
+            cell.classList.toggle('locked', shouldLockInput);
+          }
+        });
+
+        if (this.aiThinking) {
+          this.turnText.textContent = 'RUTENG AI LAGI MIKIR...';
+        } else if (isOnline && !this.online.connected) {
+          this.turnText.textContent = 'TUNGGU TEMAN MASUK...';
+        } else if (isOnline && !isMyOnlineTurn) {
+          this.turnText.textContent = `GILIRAN ${this.getPlayerName(this.currentTurn)} (${this.currentTurn})...`;
+        } else {
+          const activeName = this.getPlayerName(this.currentTurn);
+          this.turnText.textContent = `GILIRAN ${activeName} (${this.currentTurn})`;
+        }
+      }
+
+      handleCellClick(index) {
+        if (!this.gameActive || this.aiThinking || this.board[index] !== null) {
+          return;
+        }
+
+        if (this.save.mode === 'online') {
+          if (!this.online.connected) return;
+          const mySym = this.getLocalOnlineSymbol();
+          if (this.currentTurn !== mySym) return;
+          this.executeMove(index, mySym, false);
+          this.online.send({
+            type: 'MOVE',
+            index,
+            symbol: mySym
+          });
+          return;
+        }
+
+        this.executeMove(index, this.currentTurn, false);
+
+        // Trigger AI turn if PvAI and game is still active
+        if (this.gameActive && this.save.mode === 'pvai' && this.currentTurn === 'O') {
+          this.aiThinking = true;
+          this.updateTurnIndicator();
+
+          const delay = this.save.difficulty === 'easy' ? 360 : 480;
+          this.aiTimer = setTimeout(() => {
+            if (!this.gameActive) return;
+            const aiMove = ViceAI.chooseMove([...this.board], this.save.difficulty);
+            this.aiThinking = false;
+            if (aiMove !== -1) {
+              this.executeMove(aiMove, 'O', false);
+            }
+          }, delay);
+        }
+      }
+
+      executeMove(index, symbol, isRemote = false) {
+        this.board[index] = symbol;
+        const cell = this.cells[index];
+        cell.classList.add('taken', symbol === 'X' ? 'x-cell' : 'o-cell');
+        cell.innerHTML = this.getPlacedSVG(symbol);
+
+        if (symbol === 'X') {
+          this.audio.playPlaceX();
+        } else {
+          this.audio.playPlaceO();
+        }
+
+        // Check for win or draw
+        const winMatch = this.checkWinPattern();
+        if (winMatch) {
+          this.handleVictory(symbol, winMatch);
+          return;
+        }
+
+        if (this.board.every(sq => sq !== null)) {
+          this.handleDraw();
+          return;
+        }
+
+        // Switch turn
+        this.currentTurn = symbol === 'X' ? 'O' : 'X';
+        this.updateTurnIndicator();
+        this.triggerMoveEncouragement(symbol);
+      }
+
+      showEncouragement(text) {
+        if (!this.hypeBanner) return;
+        this.hypeBanner.classList.remove('show');
+        clearTimeout(this.hypeTimer);
+        this.hypeTimer = setTimeout(() => {
+          this.hypeBanner.textContent = text;
+          this.hypeBanner.classList.add('show');
+        }, 90);
+      }
+
+      triggerMoveEncouragement(lastSymbol) {
+        const lines = [
+          'Bisa tu! Atur langkah bae-bae, jangan kasi celah!',
+          'Dingin-dingin begini bikin kepala makin tajam. Lanjut su!',
+          'Pelan tapi pasti, tahan posisi tengah deng sudut!',
+          'Gas terus! Satu baris pas bisa bikin lawan kaget!',
+          'Semangat kaka! Baca gerak lawan baru balas!'
+        ];
+        if (this.save.mode === 'pvai' && lastSymbol === 'O') {
+          this.showEncouragement('AI su jalan! Jangan kendor, balas deng langkah cerdas!');
+          return;
+        }
+        const pick = lines[Math.floor(Math.random() * lines.length)];
+        this.showEncouragement(pick);
+      }
+
+      checkWinPattern() {
+        for (const pattern of WIN_PATTERNS) {
+          const [a, b, c] = pattern.combo;
+          if (
+            this.board[a] &&
+            this.board[a] === this.board[b] &&
+            this.board[a] === this.board[c]
+          ) {
+            return pattern;
+          }
+        }
+        return null;
+      }
+
+      handleVictory(winnerSymbol, pattern) {
+        this.gameActive = false;
+        this.clearPendingAI();
+
+        // Lock remaining empty cells
+        this.cells.forEach(c => c.classList.add('locked'));
+
+        // Highlight winning cells
+        pattern.combo.forEach(idx => {
+          this.cells[idx].classList.add('win-cell');
+        });
+
+        // Draw Animated SVG Strike Line
+        const [x1, y1, x2, y2] = pattern.coords;
+        this.winStrikeLine.setAttribute('x1', x1);
+        this.winStrikeLine.setAttribute('y1', y1);
+        this.winStrikeLine.setAttribute('x2', x2);
+        this.winStrikeLine.setAttribute('y2', y2);
+        this.winStrikeLine.classList.add('show', winnerSymbol === 'X' ? 'x-win' : 'o-win');
+
+        // Update Session & Career Stats
+        this.sessionScores[winnerSymbol]++;
+        if (winnerSymbol === 'X') {
+          this.save.stats.xWins++;
+        } else {
+          this.save.stats.oWins++;
+        }
+        persistSaveData(this.save);
+        this.updateSessionScoreUI();
+
+        const winnerName = this.getPlayerName(winnerSymbol);
+        this.turnText.textContent = `${winnerName} MENANG!`;
+
+        // Sound & Confetti
+        const isHumanDefeatedByAI = this.save.mode === 'pvai' && winnerSymbol === 'O';
+        const isOnlineDefeat = this.save.mode === 'online' && winnerSymbol !== this.getLocalOnlineSymbol();
+
+        this.showEncouragement(
+          isHumanDefeatedByAI || isOnlineDefeat
+            ? 'Sonde apa-apa, taruh ulang baru balas di ronde berikut!'
+            : 'Mantap bae! Ruteng malam ini milik katong!'
+        );
+        if (isHumanDefeatedByAI || isOnlineDefeat) {
+          this.audio.playDefeat();
+        } else {
+          this.audio.playWin();
+          const styles = getComputedStyle(document.documentElement);
+          const pCol = styles.getPropertyValue('--primary').trim();
+          const sCol = styles.getPropertyValue('--secondary').trim();
+          const aCol = styles.getPropertyValue('--accent').trim();
+          this.confetti.burst([pCol, sCol, aCol, '#ffffff']);
+        }
+
+        // Show Cinematic Victory Overlay after strike-line animation
+        setTimeout(() => {
+          this.resultKicker.textContent = isHumanDefeatedByAI ? 'KALAH DARI MESIN' : 'RAJA KOTA RUTENG';
+          this.resultHeadline.textContent = isHumanDefeatedByAI ? 'BETA KALAH' : 'MENANG BESAR';
+          this.resultHeadline.className = 'result-headline' + (winnerSymbol === 'O' ? ' o-winner' : '');
+          this.resultSubtext.textContent = isHumanDefeatedByAI
+            ? `RUTENG AI (${this.save.difficulty.toUpperCase()}) SU KALAHKAN BETA`
+            : `${winnerName} SU PEGANG JUARA`;
+
+          this.resultOverlay.classList.add('visible');
+        }, 720);
+      }
+
+      handleDraw() {
+        this.gameActive = false;
+        this.clearPendingAI();
+        this.cells.forEach(c => c.classList.add('locked'));
+
+        this.sessionScores.draw++;
+        this.save.stats.draws++;
+        persistSaveData(this.save);
+        this.updateSessionScoreUI();
+
+        this.turnText.textContent = 'HASIL SERI — SAMA KUAT';
+        this.audio.playDraw();
+        this.showEncouragement('Sama-sama kuat! Ronde berikut musti pecah telur!');
+
+        setTimeout(() => {
+          this.resultKicker.textContent = 'SERI DI LEONIDA';
+          this.resultHeadline.textContent = 'SERI';
+          this.resultHeadline.className = 'result-headline draw-result';
+          this.resultSubtext.textContent = 'SONDE ADA YANG KALAH — PERTARUNGAN MASIH PANAS';
+          this.resultOverlay.classList.add('visible');
+        }, 520);
+      }
+    }
+
+    // Boot application safely after DOM & resources load
+    window.addEventListener('DOMContentLoaded', () => {
+      window.viceGame = new TicTacToeGame();
+      window.viceGame.initOpeningSplash();
+    });
+  </script>
+</body>
+</html>
